@@ -54,7 +54,7 @@ Overview:
  5. __Spectrophotometric Calibration__: provides absolute flux calibration for each cube using either the satellite spots or an unsaturated, unocculted data cube
       - charis_specphot_cal
  6. __Spatial Filtering__: subtracts off either a radial profile from each slice or a moving-box median filter.   Also generates a sequenced-combined classical ADI cube
-      -charis_imrsub
+      - charis_imrsub
  7. __PSF Subtraction__: subtracts off the stellar PSF using A-LOCI or KLIP employed with different combinations of angular and/or spectral differential imaging or reference star differential imaging
       - charis_adialoci, charis_sdialoci, charis_adiklip, charis_rdiklip
  8. __Forward-Modeling: Throughput Corrections and Attenuation Maps__: uses forward-modeling to determine the signal loss per channel of a planet at a given position or the azimuthal average signal loss for planets over a range of separations (i.e. an attenuation map).
