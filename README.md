@@ -18,11 +18,19 @@ To set up this package you need to do the following ...
 
 1. Download and copy entire zip'd package to your preferred directory path: (e.g. cp [package_version].zip [your/preferred/path/])
 2. Unzip the package (i.e. cd to [your/preferred/path/] and then "unzip [package_version].zip" from standard Terminal command line)
-3. Add that directory path to your IDL PATH, which is usually defined in a .bashrc or .cshrc file.  For example, if your preferred directory path is charis_dpp and you are using a tcsh shell, then the following line should be added to your .cshrc file:
+3. Add that directory path to your IDL PATH, which is usually defined in a .bash_profile or .cshrc file.  
+
+For example, if your preferred directory path is charis_dpp and you are using a **tcsh** shell, then the following line should be added to your .cshrc file:
 
       setenv IDL_PATH +$IDL_DIR/lib:+$HOME/[your/preferred/path/charis_dpp_v7]
+      
+If your preferred directory path is charis_dpp and you are using a **bash** shell, then the following line should be added to your .bash_profile file:
 
-4. Navigate to your CHARIS DPP package directory.   Under the "setup" subdirectory, edit line 11 of charis_path.pro, to change the directory path to your full charis PATH
+      export IDL_PATH=+HOME/[your/preferred/path/charis_dpp_v7]
+
+4. "source" your .cshrc or .bash_profile file.
+
+5. Navigate to your CHARIS DPP package directory.   Under the "setup" subdirectory, edit line 11 of charis_path.pro, to change the directory path to your full charis PATH
 
      (e.g. if you unpack this package as charis_dpp, then edit line 11 as follows: charispath='[path to CHARIS-DPP]/charis_dpp/'   )
 
