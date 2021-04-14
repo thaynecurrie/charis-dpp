@@ -26,7 +26,7 @@ For example, if your preferred directory path is charis_dpp and you are using a 
       
 If your preferred directory path is charis_dpp and you are using a **bash** shell, then the following line should be added to your .bash_profile file:
 
-      export IDL_PATH=+HOME/[your/preferred/path/charis_dpp_v7]
+      export IDL_PATH=+$IDL_DIR/lib:+HOME/[your/preferred/path/charis_dpp_v7]
 
 4. "source" your .cshrc or .bash_profile file.
 
