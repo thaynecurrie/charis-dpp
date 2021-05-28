@@ -41,7 +41,7 @@ If your preferred directory path is charis_dpp and you are using a **bash** shel
 
 5. Navigate to your CHARIS DPP package directory.   Under the "setup" subdirectory, edit line 13 of charis_path.pro, to change the directory path to your full charis PATH
 
-     (e.g. if you unpack this package as charis_dpp, then edit line 11 as follows: charispath='[path to CHARIS-DPP]/charis_dpp/'   )
+     (e.g. if you unpack this package as charis_dpp, then edit line 13 as follows: charispath='[path to CHARIS-DPP]/charis_dpp/'   )
 
 
 To test whether your installation was (likely) successful, start IDL prompt from anywhere on your computer and run a program called charis_test:
