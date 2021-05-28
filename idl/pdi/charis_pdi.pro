@@ -1,6 +1,6 @@
 pro charis_pdi, pfname, prefname=prefname, Lsuffname=Lsuffname, Rsuffname=Rsuffname, hwpinfo_name=hwpinfo_name, outfile=outfile,$
 fov_mask_pars=fov_mask_pars, meanadd=meanadd, angoffset=angoffset, first_order_ip_correct=first_order_ip_correct, fo_ip_rlims=fo_ip_rlims,$
-azimuthal_stokes=azimuthal_stokes, phi_offset=phi_offset, help=help
+azimuthal_stokes=azimuthal_stokes, phi_offset=phi_offset, single_sum_zeros=single_sum_zeros, help=help
 
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,'charis_pdi.pro: Carries out single+double summing/differencing of PDI sequences, outputting Stokes parameter image cubes and wavelength collapsed images.'
@@ -29,6 +29,7 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,"fo_ip_rlims=ARRAY - Two element array indicating the inner and outer radii of the annulus to use in first order IP correction; no effect if /first_order_ip_correct is not set. Defaults to [10,30]."
     print,"/azimuthal_stokes - Calculate azimuthal stokes parameters (Qphi, Uphi) in addition to typical linear Stokes parameters."
     print,"phi_offset - Offset for the angle of linear polarization (AOLP) in radians to assume when computing azimuthal Stokes parameters. No effect if /azimuthal_stokes is not set. Defaults to 0."
+    print,"/single_sum_zeros - Apply zeros instead of nans to pixels beyond the defined FOV for the output single sum image cubes."
     goto,endofprogram
 endif
 
@@ -93,19 +94,17 @@ PIout= procdir+filelist(cycle_filenums, ncyc, prefix='c', suffix='_pi')
 q_dpas = fltarr(ncycles)
 u_dpas = fltarr(ncycles)
 
-h0_master = headfits(files_polleft[0], ext=0, /silent)
-h1_master = headfits(files_polleft[0], ext=1, /silent)
-
 ; Separately computing all single sums and writing to ./reduc/reg with standard total intensity filenames:
 for Ti=0,nfiles_polpair-1 do begin
     h0L = headfits(files_polleft[Ti], ext=0, /silent)
     leftcube= readfits(files_polleft[Ti],h1L,/exten,/silent)
     rightcube= readfits(files_polright[Ti],h1R,/exten,/silent)
-    badl=where(leftcube eq 0)
-    badr=where(rightcube eq 0)
     imcube = leftcube+rightcube
-    imcube[badl] = 0.
-    imcube[badr] = 0.
+    for Li=0,sz[2]-1 do begin
+        imslice = imcube[*,*,Li]
+        if keyword_set(single_sum_zeros) then imslice[outside_fov] = 0. else imslice[outside_fov] = !values.f_nan
+        imcube[*,*,Li] = imslice
+    endfor
     writefits,(files_polleft[Ti].replace(Lsuffname, 'reg_cal')),0,h0L
     writefits,(files_polleft[Ti].replace(Lsuffname, 'reg_cal')),imcube,h1L,/append
 endfor
@@ -215,7 +214,6 @@ for ci=0,ncycles-1 do begin
 
     ; Saving IQ, Q products...
     orignames=sxpar(h1_qpL,'origname')+', '+sxpar(h1_qmL,'origname')
-    sxaddpar,h0,'cycle',orignames,'origname entries for frames in this cycle'
     sxaddpar,h1,'cycle',orignames,'origname entries for frames in this cycle'
     writefits,IQout[ci],0,h0
     writefits,IQout[ci],IQ,h1,/append
@@ -224,7 +222,6 @@ for ci=0,ncycles-1 do begin
 
     ; Saving IU, U products...
     orignames=sxpar(h1_upL,'origname')+', '+sxpar(h1_umL,'origname')
-    sxaddpar,h0,'cycle',orignames,'origname entries for frames in this cycle'
     sxaddpar,h1,'cycle',orignames,'origname entries for frames in this cycle'
     writefits,IUout[ci],0,h0
     writefits,IUout[ci],IU,h1,/append
@@ -233,34 +230,15 @@ for ci=0,ncycles-1 do begin
 
     ; Saving I, PI products...
     orignames=sxpar(h1_qpL,'origname')+', '+sxpar(h1_upL,'origname')+', '+sxpar(h1_qmL,'origname')+', '+sxpar(h1_umL,'origname')
-    sxaddpar,h0,'cycle',orignames,'origname entries for frames in this cycle'
     sxaddpar,h1,'cycle',orignames,'origname entries for frames in this cycle'
     writefits,Iout[ci],0,h0
     writefits,Iout[ci],total_intensity,h1,/append
     writefits,PIout[ci],0,h0
     writefits,PIout[ci],polarized_intensity,h1,/append
-
-    cycle_str = string(ci+1)
-    cycle_str = cycle_str.trim()
-    cycle_str = 'cycle_'+cycle_str
-    sxaddpar,h0_master,cycle_str,orignames
-    sxaddpar,h1_master,cycle_str,orignames
 endfor
-
-sxaddpar,h1_master,'prefname',prefname
-sxaddpar,h1_master,'Lsuffname',Lsuffname
-sxaddpar,h1_master,'Rsuffname',Rsuffname
-sxaddpar,h1_master,'hwpinfo_name',hwpinfo_name
-sxaddpar,h1_master,'fov_mask_pars',strjoin((string(fov_mask_pars)).trim(),', ')
-;sxaddpar,h1_master,'meanadd',meanadd
-sxaddpar,h1_master,'angoffset',angoffset
-sxaddpar,h1_master,'first_order_ip_correct',first_order_ip_correct
-sxaddpar,h1_master,'fo_ip_rlims',strjoin((string(fo_ip_rlims)).trim(),', ')
-sxaddpar,h1_master,'phi_offset',phi_offset
 
 qhcube = fltarr(sz[0],sz[1],sz[2],ncycles)
 uhcube = fltarr(sz[0],sz[1],sz[2],ncycles)
-
 for ci=0,ncycles-1 do begin
     qh0 = headfits(Qout[ci], ext=0, /silent)
     qcube = readfits(Qout[ci], qh1, /exten, /silent)
@@ -282,7 +260,42 @@ for ci=0,ncycles-1 do begin
 
     qhcube[*,*,*,ci] = qcube
     uhcube[*,*,*,ci] = ucube
+
+    if ci eq 0 then begin
+        h0_main = qh0
+        h1_main = qh1
+        h1q_main = qh1
+        h1u_main = uh1
+    endif
+
+    cycle_str = 'cyc_'+((string(ci+1)).trim())
+    qorignames = sxpar(qh1,'cycle')
+    sxaddpar,h1q_main,cycle_str,qorignames
+    uorignames = sxpar(uh1,'cycle')
+    sxaddpar,h1u_main,cycle_str,uorignames
+    orignames = qorignames+', '+uorignames
+    sxaddpar,h1_main,cycle_str,orignames
 endfor
+
+h1s = list(h1_main, h1q_main, h1u_main)
+for i=0,2 do begin
+    h1 = h1s[i]
+    sxdelpar,h1,'cycle'; Removing "cycle" entry from original combo
+    sxaddpar,h1,'prefname',prefname
+    sxaddpar,h1,'Lsuffname',Lsuffname
+    sxaddpar,h1,'Rsuffname',Rsuffname
+    sxaddpar,h1,'hwpinfo_name',hwpinfo_name
+    sxaddpar,h1,'fov_mask_pars',strjoin((string(fov_mask_pars)).trim(),', ')
+    sxaddpar,h1,'meanadd',meanadd
+    sxaddpar,h1,'angoffset',angoffset
+    sxaddpar,h1,'first_order_ip_correct',first_order_ip_correct
+    sxaddpar,h1,'fo_ip_rlims',strjoin((string(fo_ip_rlims)).trim(),', ')
+    sxaddpar,h1,'phi_offset',phi_offset
+    h1s[i] = h1
+endfor
+h1_main = h1s[0]
+h1q_main = h1s[1]
+h1u_main = h1s[2]
 
 if ~keyword_set(meanadd) then begin
     qcube=median(qhcube, dimension=4, /even)
@@ -292,25 +305,15 @@ endif else begin
     resistant_mean,uhcube,3.,ucube,dimension=4
 endelse
 
-rotangq = sxpar(qh1,'ROTANG',comment=rotang_comment)
-rotangu = sxpar(uh1,'ROTANG')
-rotang = (rotangq+rotangu)/2.
+writefits,procdir+outfile+'_q.fits',0,h0_main
+writefits,procdir+outfile+'_q.fits',qcube,h1q_main,/append
 
-h1_masterq = h1_master
-h1_masteru = h1_master
-
-sxaddpar,h1_masterq,'ROTANG',rotangq,rotang_comment
-sxaddpar,h1_masteru,'ROTANG',rotangu,rotang_comment
-sxaddpar,h1_master,'ROTANG',rotang,rotang_comment
-
-writefits,procdir+outfile+'_q.fits',0,h0_master
-writefits,procdir+outfile+'_q.fits',qcube,h1_masterq,/append
-writefits,procdir+outfile+'_u.fits',0,h0_master
-writefits,procdir+outfile+'_u.fits',ucube,h1_masteru,/append
+writefits,procdir+outfile+'_u.fits',0,h0_main
+writefits,procdir+outfile+'_u.fits',ucube,h1u_main,/append
 
 pi_cube = sqrt(qcube^2 + ucube^2)
-writefits,procdir+outfile+'_pi.fits',0,h0_master
-writefits,procdir+outfile+'_pi.fits',pi_cube,h1_master,/append
+writefits,procdir+outfile+'_pi.fits',0,h0_main
+writefits,procdir+outfile+'_pi.fits',pi_cube,h1_main,/append
 
 ; Collapse Q and U wavelength cubes to a single broadband image, calculate products again
 if ~keyword_set(meanadd) then begin
@@ -321,14 +324,14 @@ endif else begin
     resistant_mean,ucube,3.,ucol,dimension=3
 endelse
 
-writefits,procdir+outfile+'_q_collapsed.fits',0,h0_master
-writefits,procdir+outfile+'_q_collapsed.fits',qcol,h1_masterq,/append
-writefits,procdir+outfile+'_u_collapsed.fits',0,h0_master
-writefits,procdir+outfile+'_u_collapsed.fits',ucol,h1_masteru,/append
+writefits,procdir+outfile+'_q_collapsed.fits',0,h0_main
+writefits,procdir+outfile+'_q_collapsed.fits',qcol,h1q_main,/append
+writefits,procdir+outfile+'_u_collapsed.fits',0,h0_main
+writefits,procdir+outfile+'_u_collapsed.fits',ucol,h1u_main,/append
 
 pi_col = sqrt(qcol^2 + ucol^2)
-writefits,procdir+outfile+'_pi_collapsed.fits',0,h0_master
-writefits,procdir+outfile+'_pi_collapsed.fits',pi_col,h1_master,/append
+writefits,procdir+outfile+'_pi_collapsed.fits',0,h0_main
+writefits,procdir+outfile+'_pi_collapsed.fits',pi_col,h1_main,/append
 
 if keyword_set(azimuthal_stokes) then begin
     phi = angarr(dimx)
@@ -343,17 +346,17 @@ if keyword_set(azimuthal_stokes) then begin
     qphi_cube = (-qcube*cos(2.*phi_cube))-(ucube*sin(2.*phi_cube))
     uphi_cube = (qcube*sin(2.*phi_cube))-(ucube*cos(2.*phi_cube))
 
-    writefits,procdir+outfile+'_qphi.fits',0,h0_master
-    writefits,procdir+outfile+'_qphi.fits',qphi_cube,h1_master,/append
-    writefits,procdir+outfile+'_uphi.fits',0,h0_master
-    writefits,procdir+outfile+'_uphi.fits',uphi_cube,h1_master,/append
+    writefits,procdir+outfile+'_qphi.fits',0,h0_main
+    writefits,procdir+outfile+'_qphi.fits',qphi_cube,h1_main,/append
+    writefits,procdir+outfile+'_uphi.fits',0,h0_main
+    writefits,procdir+outfile+'_uphi.fits',uphi_cube,h1_main,/append
 
     qphi_col = (-qcol*cos(2.*phi))-(ucol*sin(2.*phi))
     uphi_col = (qcol*sin(2.*phi))-(ucol*cos(2.*phi))
-    writefits,procdir+outfile+'_qphi_collapsed.fits',0,h0_master
-    writefits,procdir+outfile+'_qphi_collapsed.fits',qphi_col,h1_master,/append
-    writefits,procdir+outfile+'_uphi_collapsed.fits',0,h0_master
-    writefits,procdir+outfile+'_uphi_collapsed.fits',uphi_col,h1_master,/append
+    writefits,procdir+outfile+'_qphi_collapsed.fits',0,h0_main
+    writefits,procdir+outfile+'_qphi_collapsed.fits',qphi_col,h1_main,/append
+    writefits,procdir+outfile+'_uphi_collapsed.fits',0,h0_main
+    writefits,procdir+outfile+'_uphi_collapsed.fits',uphi_col,h1_main,/append
 endif
 endofprogram:
 end
