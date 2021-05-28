@@ -5,7 +5,7 @@ The CHARIS Data Processing Pipeline is a full end-to-end, supported pipeline for
 
 Requirements: 
 -------------------------------
-- the distributed CHARIS-DPP package (will be available here soon; contact T. Currie for details)
+- the distributed CHARIS-DPP package (available here)
 - an IDL license (code is not pre-compiled).   Note that a future release (~late 2021) will be available in Python 3.
 - the IDL Astronomer User's Library.  http://idlastro.gsfc.nasa.gov/
 - SAOImage/DS9 or similar image display program (STRONGLY recommended but not strictly required)
