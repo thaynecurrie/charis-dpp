@@ -16,6 +16,13 @@ Requirements:
 -------------------------------
 To set up this package you need to do the following ...
 
+A. With Git
+
+1. cd to your preferred directory
+2. git clone https://github.com/thaynecurrie/charis-dpp.git
+
+B. Manually
+
 1. Download and copy entire zip'd package to your preferred directory path: (e.g. cp [package_version].zip [your/preferred/path/])
 2. Unzip the package (i.e. cd to [your/preferred/path/] and then "unzip [package_version].zip" from standard Terminal command line)
 3. Add that directory path to your IDL PATH, which is usually defined in a .bash_profile or .cshrc file.  
