@@ -25,6 +25,8 @@ B. Manually
 
 1. Download and copy entire zip'd package to your preferred directory path: (e.g. cp [package_version].zip [your/preferred/path/])
 2. Unzip the package (i.e. cd to [your/preferred/path/] and then "unzip [package_version].zip" from standard Terminal command line)
+
+THEN ...
 3. Add that directory path to your IDL PATH, which is usually defined in a .bash_profile or .cshrc file.  
 
 For example, if your preferred directory path is charis_dpp and you are using a **tcsh** shell, then the following line should be added to your .cshrc file:
