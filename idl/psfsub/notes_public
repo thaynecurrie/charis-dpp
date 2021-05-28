@@ -1,0 +1,11 @@
+;*****Limitations/To Do List ****
+
+1. KLIP in ADI only - KLIP-SDI is not yet implemented
+
+2. No Simultaneous ADI+SDI - Currently, ADI and SDI reductions are separated into 2 separate programs.   Currently, we do not have a simultaenous ADI+SDI as in TLOCI or PyKLIP.   Adding ADI+SDI is low priority right now.   This is because ADI is fairly effective; doing ADI *then* SDI seems to be very effective.   At most, I expect a very small gain with ADI+SDI at mid-range angles (0.25"-0.5"): ADI dominates at the smallest angles and at the largest; SDI dominates in the middle.
+
+3. Limited Implementation of Public ALOCI - Current code includes ALOCI components: SVD truncation, correlation-based frame selection within the covariance matrix calculations, local masking of the subtraction zone.   For ADI, the local masking is non-optimal for detecting faint point sources.   Useful right now only for planets brighter than the local speckle noise.   For SDI, local masking appears optimal.
+
+For ADI, the optimization zone geometry is the classic Lafreniere zone geometry.   For SDI, the zone geometry is defined to be an annular ring.   This (when combined with local masking) yields 90+% throughput for SDI.   However, better speckle suppression might be gained by using smaller optimization zones (i.e. annular wedges flanking the subtraction zone).
+
+

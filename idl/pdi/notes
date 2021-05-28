@@ -1,0 +1,10 @@
+;******* TO DO*******
+
+All of the code needs to be written.  
+
+To complete
+
+- Adding HWP information if it is missing
+- PDI registration and splitting into orthogonal polarizations (done)
+- combining, rotating, and double-differencing
+- PSF subtraction with PDI (spring 2020)

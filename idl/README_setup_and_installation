@@ -1,0 +1,28 @@
+I. Setup
+ you need ...
+- the distributed CHARIS-DPP package
+- a reasonably current version of the IDL Astronomy Library
+- an IDL license
+
+For some programs to work (e.g. charis_newobs), you need an active Internet connection, as these programs query SIMBAD and VIZIER
+
+II. Installation
+
+To set up this package you need to ...
+
+1. Copy entire zip'd package to your preferred directory path: (e.g. cp [package_version].zip [your/preferred/path/])
+
+2. Unzip the package (i.e. cd to [your/preferred/path/] and then "unzip [package_version].zip" from Terminal command line)
+
+3.  Add that directory path to your IDL PATH
+
+e.g. if your directory is charis_dpp_v7 then in tcsh (.cshrc)
+setenv IDL_PATH +$IDL_DIR/lib:+$HOME/[your/preferred/path/charis_dpp_v7]:
+
+4. under the "setup" subdirectory, edit line 11 of charis_path.pro, to change the directory path to your full charis PATH
+(e.g. if you unpack this package as charis_dpp_v7, then do the following:
+ charispath='[path to CHARIS-DPP]/charis_dpp_v7/'   )
+
+
+III. Verification
+To verify correct installation, run 'charis_test' at IDL prompt

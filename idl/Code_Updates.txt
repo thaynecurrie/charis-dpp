@@ -1,0 +1,128 @@
+;Version 7.1 - May 15, 2021
+***Changes Made ***
+Tools
+ - includes "atmosfit" program to simultaneously fit CHARIS spectra and photometric points with BT-Settl models
+Partial Sub/Psfsub
+- saving coefficients is nominally *turned off*: forward-modeling does not require saved coefficients. Impact: faster forward-modeling, otherwise no effect.
+- restructured forward-modeling into a series of 'case' statements to fwd-model, ADI, SDI, ADI-p-SDI, and SDI-p-ADI
+- both ALOCI and KLIP fully updated
+Psfsub
+ - updated ADI-ALOCI, SDI-ALOCI codes
+ - can now do ADI on SDI residuals with ALOCI
+Reg
+ - updated PSFquality check
+Specphotcal 
+ - added ability to calibrate cube off of results of another cube (calmethod=5) (charis_specphotcal.pro)  (charis_specphotcal.pro.bk is old version)
+ - updated spectral extraction for disk sources (charis_extract_1d_spectrum_disk.pro)
+ - updated astrometry grid search for extended sources/sources in disks
+PDI
+- now "largely complete" PDI pipeline (K. Lawson)
+
+
+;Version 7.0 - December 31, 2020
+
+***Changes Made ***
+Added 'test' subdirectory and "charis_test.pro" [to test correct installation path] and "charis_which.pro" [to find paths of your programs]
+
+PSF subtraction programs
+-PSF subtraction programs (throughout) calls to 'myaper' --> 'charis_myaper' to avoid collisions and make distribution self-contained
+-renamed charis_subsklip and charis_subsklip_rdi to charis_adiklip and charis_rdiklip
+-branched off separate proprietary version of A-LOCI ADI & SDI code for T.C. and later for internal team distribution only
+
+Analysis
+-slight changes to determination of band-integrated photometry in charis_est_bbphot.pro
+
+charis_specphot_cal-
+-small changes to calculation of spectrophotometric errors to better reflect accuracy of satellite spot contrast.
+**********
+
+;Version 6.1 - October 6, 2020
+
+***
+Changes Made
+
+- charis_autoreduce 
+Does an automatic reduction -- "start to finish" -- of CHARIS data.   Appropriate for quick-look reductions.
+***
+
+;Version 6 - August 2020
+******Scripts
+
+*******Setup
+
+-charis_path.pro
+ changed path for Montreal library to agree with DPP-distributed Montreal library path
+
+- charis_get_constant.pro
+changed pixscale to 0.0162
+added "angoffset" constant: now required for PSF subtraction routines
+ ***To Do *** figure out how to package the SPeX library
+ 
+*******Prelims
+
+-charis_newobs.pro 
+changed SIMBAD target search to match HCI general purpose code version: more robust against SIMBAD's string parsing errors.
+added help function
+
+-charis_imprep.pro
+added help function and documentation
+added frame selection function to set fnum_sat and fnum_sky.  
+****TO DO **** figure out way to set the ladder?
+
+
+******Sky****
+-charis_subtract_sky.pro
+added help function and documentation
+
+*****Reg****
+-charis_register_cube.pro
+changed from charis_imregister_cube to charis_register_cube
+removed many commented-out lines/debugging notes
+put method switch as 0, 1, and 2 [sats, psf, calsat]
+help documentation added
+
+*******Specphotcal
+
+- charis_specphot_cal.pro : code cleaned up, help function updated
+- charis_specphot_cal_unsat.pro : ditto
+- charis_makeemppsf: ditto
+- charis_makesynthpsf: ditto
+- charis_satspot_cal: ditto
+- charis_extract_1d_spectrum: cleaned up code, help function updated
+
+****Filt***
+-charis_imrsub.pro
+added help function and documentation
+
+****PSFsub***
+- charis_ssdi: code cleaned up, now rotates everything to northup; help function updated
+- charis_subsklip: ditto
+- charis_subsklip_rdi: ditto
+- charis_sublocirx: ditto
+- charis_sdialoci: updated "north-up" procedure to agree with ADI/KLIP & ALOCI codes
+
+- renamed charis_sublocirx as charis_adialoci [more logical naming]
+
+***PartialSub***
+
+
+******Planetspec
+- charis_planet_photometric_calibration_calculation: now can read in both FITS files (wvlh, f, are array=[*,0] and [*,1], respectively) and txt files (readcol)
+- try testing both for robustness
+
+******Tools
+*empcomp
+- some improvement in charis_empbdplanspec.pro
+- added help function and documentation to charis_est_lum_bd.pro
+*psf/diskanalysis/imagequality
+- added charis_resample_psf.pro - program to resample an image from another source (e.g. input a scaled HiCIAO or NIRC2 image to the CHARIS scale)
+- added charis_diskmodel_resample.pro -program to resample model disk (similar to above)
+- added documentation to charis_calc_ee.pro
+
+***to do ***-
+figure out longest dimension and then read in appropriately to get wavelength and flux
+
+
+subroutines
+- copied working version of hrot2 to "subroutines" folder to guard against crashes
+

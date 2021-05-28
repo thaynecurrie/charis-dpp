@@ -1,0 +1,13 @@
+1. need IDL astro users's library
+
+2. stray functions
+
+deg2dms.pro
+strc.pro
+intshift.pro
+parangle.pro
+setcolors.pro  [from /idlextra]
+str_sep [from /obsolete]
+everything under /textoidl/
+
+3. getting some errors with cgcolors

@@ -1,0 +1,5 @@
+;CAUTION!!!!!!!!!
+
+- You have copied over numerous functions from other folders in a broad distribution package for use with the CHARIS DPP.
+
+- This will override their use elsewhere on your computer.   If this triggers a crash, then remove sub-folder from path.

@@ -1,0 +1,14 @@
+;****Current models:
+L0-L8 template spectra constructed from Cruz et al. (2018):
+f=field gravity
+b=beta/intermediate gravity
+g=gamma/low gravity
+
+T2 field spectrum: Spex
+T4.5 field spectrum: Spex
+
+***TO DO****
+-Put in dusty/peculiar low g dwarfs (e.g. 2M 1207B)
+-Put in T dwarfs
+-Put in a few individual objects
+

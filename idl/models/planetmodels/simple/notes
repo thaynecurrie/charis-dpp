@@ -1,0 +1,4 @@
+; 'Simple Planet' is an L0 low gravity object from the Bonnefoy library
+
+; ***To Improve Later*** There are some interpolation problems with the 'simple planet' between J, H, and K.  Depending on the indirect self-subtraction terms, this may lead to larger uncertainties in the throughput correction from forward-modeling.
+

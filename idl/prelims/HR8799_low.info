@@ -1,0 +1,45 @@
+NAME    = 'HR 8799'            /                                                
+RA      =        346.869648710 /RA, equinox J2000, epoch J2000                  
+DEC     =        21.1342505900 /DEC, equinox J2000, epoch J2000                 
+RA_HMS  = ' 23:07:28.72'       /RA, equinox J2000, epoch J2000                  
+DEC_DMS = '+21:08:03.3'        /DEC, equinox J2000, epoch J2000                 
+PLX     =              25.0400 / Parallax, mas                                  
+DISTANCE=        39.9361007763 / Distance (pc)                                  
+EPLX    =             0.850000 / Error on parallax, mas                         
+PMRA    =        107.880000000 / Proper motion RA [*cos(DEC)], mas/yr           
+EPMRA   =             0.750000 / Error on PMRA                                  
+PMDEC   =       -50.0800000000 / Proper motion DEC, mas/yr                      
+EPMDEC  =             0.640000 / Error on PMDEC                                 
+SPTYPE  = 'A5V'                / Spectral Type                                  
+JMAG    =              5.38300 /J magnitude, 2MASS                              
+EJMAG   =            0.0270000 /Error on JMAG                                   
+HMAG    =              5.28000 /H magnitude, 2MASS                              
+EHMAG   =            0.0180000 /Error on HMAG                                   
+KMAG    =              5.24000 /Ks magnitude, 2MASS                             
+EKMAG   =            0.0180000 /Error on KMAG                                   
+OBSDATE = '20170814'           /Observation date                                
+FNUM_SAT= '1-100'              /File #s, sat, main seq                          
+FNUM_SKY= '101-103'            /File #s, sky frames                             
+PROCDIR = './proc/'            /Subdirectory to put processed files             
+RSAT    =             -1.00000 /PSF saturation radius                           
+FWHM    =              2.63000 /Broadband PSF FWHM in pixels                    
+****    = '******PSF Sub Range' /                                               
+NFWHM   =             0.750000 /Min displacement for sub, in # of PSF FWHM      
+DR      =              5.00000 /Width of subtraction annuli                     
+RMIN    =                    5 /Min radius for PSF sub                          
+RMAX    =                   65 /Max radius for PSF sub                          
+*****   = '******Switches for Sub/Comb' /                                       
+MEANADD =                    0 /median-comb(=0), mean-comb(=1)                  
+ZERO    =                    0 /no sub median annulus(=0), sub med. annulus(=1) 
+RSUB    =                    0 /no rad-prof sub.(=0), rad-prof sub. b4 PSF sub(=
+******  = '******(A-)LOCI Params' /                                             
+LOCINA  =              100.000 /Area of optimization regions, LOCI              
+LOCIGEOM=              1.00000 /Geometry of optimization regions, LOCI          
+ALOCISVD=                   -6 /log of the SVD cutoff, A-LOCI                   
+ALOCINRE=                   50 /frame selection for A-LOCI                      
+PIXMASK =                    0 /no pixmask(=0),pixmask(=1)                      
+********= '******KLIP Params'  /                                                
+KLIPNPCA=                    5 /Number of KL Modes, KLIP                        
+KLIPNZON=                    1 /Number of azimuthal zones per annulus, KLIP     
+MEANSUB =                    1 /no subtract mean(=0), subtract mean(=1)         
+END     

@@ -1,0 +1,252 @@
+THE STELLAR ATMOSPHERE MODELS BY CASTELLI AND KURUCZ 2004
+
+The atlas contains about 4300 stellar atmosphere models for a wide
+range of metal abundances, effective temperatures and gravities. These
+LTE models, with no convective overshooting computed by Fiorella
+Castelli, have improved opacities and abundances upon previously
+used by Kurucz (1990). The main improvements from previous opacity
+distribution functions listed in Castelli & Kurucz 2003 (IAU Symposium
+210, Modelling of  Stellar Atmospheres, Uppsala, Sweden, eds. N.E. Piskunov,
+W.W. Weiss. and D.F. Gray, 2003, ASP-S210) are;
+
+1- the replacement of the solar abundances from Andres & Grevesse
+(1989, GCA,53,197; AG89) with those from Grevesse & Sauval (1998
+Space. Sci.  Rev.,85,161; GS98). See Table 2 of Castelli & Kurucz 2004.
+
+2- The replacement of the TiO lines provided by Kurucz (1993) with the
+TiO lines from Schwenke (1998, Faraday Discuss., 109,321). Addition of
+the H_2 O lines (Partridge & Schwenke 1997, J. Chem.  Phys., 106, 4618)
+and of the HI-HI and HI-H+ quasi-molecular absorptions near 1600 A
+and 1400 A (Allard et al. 1998, A&A, 335,1124), as distributed by Kurucz
+1999a, 1999b. Extended molecular listand corrected previous bugs in
+Kurucz line lists.
+
+These models are computed with the same wavelength resolution and a
+smaller temperature resolution than the Kurucz 1993 models. All the models
+have the same number of plane parallel layers from log(tau_Ross)=-6.875
+to +2.00 in steps of Delta[log(tau_Ross)] = 0.125, computed assuming a pure
+mixing-length convection (no oveshooting) with 1/Hp=1.25. As before, the
+microturbulent velocity used is 2 km s^{-1}.
+
+The ATLAS9 installed in CDBS is from "The Grids of ATLAS9-ODFNEW
+models and fluxes" from the Fiorella Castelli's web page
+(http://wwwuser.oat.ts.astro.it/castelli/grids.html) and was created on
+January 2007. These grids are also available from Dr. R. Kurucz
+(http://kurucz.harvard.edu).
+
+The ATLAS9 includes models for abundances [M/H]=0.0, -0.5, -1.0, -1.5,
+-2.0, -2.5, +0.5, +0.2 and gravity range from log_g= 0.0 to +5.0 in
+steps of +0.5. The range in effective temperature from 3500 K to 50000 K
+is covered with an uneven grid (see Table 1a). The model spectra cover the
+ultraviolet (1000A) to infrared (10 microns) spectral range with non-uniform
+wavelength spacing (see Table 1b).
+
+
+          TABLE 1a: Grid of temperatures for the models
+
+                Temperature Range      Grid Step
+                     K                      K
+                  3000 - 13000             250
+                 13000 - 50000            1000
+
+
+          TABLE 1b: Wavelength coverage for the models
+
+                Wavelength Range       Grid Step
+                    microns                A
+
+                  0.10 - 0.29             10
+                  0.29 - 1.00             20
+                  1.00 - 1.60             50
+                  1.60 - 3.20            100
+                  3.20 - 8.35            200
+                  8.35 - 10.0            400
+
+
+THE HST/CDBS VERSION OF THE ATLAS9 BY CASTELLI AND KURUCZ 2004
+
+The new atlas is divided in 8 independent subdirectories, according to
+metal abundance.  Within each subdirectory the stellar atmosphere models
+are given in fits table format. Each table consist of 12
+different columns, the first one containing the wavelength grid and
+the rest containing the spectrum of a star with the same effective 
+temperature but different gravity, ranging from log_g= 0.0 to
++5.0. Columns filled with zeros indicate that the model spectrum for
+that particular metal abundance, effective temperature and gravity
+combination is not covered by the atlas.
+
+The names of the table files are given as cksmh_ttttt.fits where "ck", for
+Castelli & Kurucz, are the first two letters of the atlas; "smh" is the
+metal abundance of the model (mh) with its sign (s); and "ttttt" is the
+model's effective temperature, using four or five digits depending on the
+value. For instance, models for an effective temperature of 5000 K with
+[M/H]= -0.5 and [M/H]= +3.5 are indicated by ttttt= 5000, s= m, mh= 05 and
+ttttt= 5000, s= p, mh= 35, i.e. ckm05_5000.fits and ckp35_5000.fits.
+
+Within each individual table file, each column is named "gyy", where
+"yy" corresponds to 10*log_g. For example, log_g= +0.5 and log_g= +4.0
+models are located in columns named g05 and g40, respectively. See the
+appendix for an example of a standard header of a table file.
+
+Physical fluxes of the spectra are given in FLAM surface flux units,
+i.e. ergs cm^{-2} s^{-1} A^{-1}. These flux units differ from those in
+the Castelli & Kurucz tables by a factor of 3.336 x 10^{-19} x
+lambda^{2} x (4pi)^{-1}, i.e. are converted from ergs cm^{-2} s^{-1}
+Hz^{-1}steradian^{-1} to ergs cm^{-2} s^{-1} A^{-1} by mutiplying the
+Castelli & Kurucz values by 3.336 x 10^{-19} x lambda^{2} x
+(4pi)^{-1}, where lambda is in Angstroms. To convert to observed
+flux at Earth, multiply by a factor of (R/D)^2 where R is the stellar
+radius, and D is the distance to Earth.
+
+The names of the files located in each metal abundance subdirectory are
+listed in the README file located in each subdirectory. The range in
+gravity covered by the models for the different temperatures is also
+indicated.
+
+USE OF THE ATLAS9 BY CASTELLI & KURUCZ 2004 WITH SYNPHOT
+
+Synphot tasks permit the use of spectra selected from one of many
+columns in a single fits table file.  One does this by specifying as
+the "spectrum" parameter the name of the disk file (as before), and
+appending the name of the column containing the flux in brackets. Thus,
+to select any model spectrum characterized by a given metal abundance,
+effective temperature, and gravity, specify a "spectrum" of the form:
+crgridck04$m_directory/ckszz_ttttt.fits[gyy], where m_directory is the
+name of the subdirectory for a given metal abundance. For example, to
+select the spectrum of a star with a [M/H]= +0.1, a temperature
+of 10,000 K, and log gravity of 3.0, the specification would be:
+crgridck04$ckp01/ckp01_10000.fits[g30].
+
+Please note that the model spectra in the atlas are in surface flux
+units.  Thus, if the number of counts or the calculated absolute flux
+is needed, the model spectrum must be renormalized appropriately.  One
+can do this in synphot with the "rn" function.
+
+Synphot also allows the use of the cat() and icat() functions to
+select Castelli & Kurucz spectra. The syntax is "cat(ck04models,t,m,g)
+where "t" is the effective temperature, "m" is the metal abundance
+[M/H], and "g" is the log gravity.  The idea is that, instead of
+having to remember a directory/file naming syntax, a synphot user
+could specify a spectrum from a specified catalog (the New ATLAS9 of
+Castelli & Kurucz, in this case) which most closely matches the specified
+attributes (in this case, T_{eff}, [M/H], and log_g) using an expression.
+The difference between the cat() and icat() functions is that cat()
+selects the nearest spectrum to the specified parameters and icat()
+interpolates between the spectra that bracket the specified
+parameters.
+
+Since the entire atlas occupies close to 70MB of disk space, many
+applications could be satisfied by a copy of the solar abundance
+spectra, only.
+
+A list of solar abundance stars of different spectral types and luminosity
+classes together with their closest Castelli & Kurucz 2004 model
+spectrum is presented in Table 2. The physical parameters, T_{eff} and
+log_g, characterizing each of the O stars are taken from Martins, 
+Schaerer, & Hiller's compilation of stellar parameters of Galactic O 
+stars (Martins, Scharer & Hiller 2005,A&A,436,1049). The physical 
+parameters for later stars are taken from Schmidt-Kaler's compilation 
+of physical parameters of stars (Schmidt-Kaler 1982, Landolt-Bornstein VI/2b). 
+For the later, the U-B and B-V colors of the closest model agree with the 
+characteristic color of each star (see Schmidt-Kaler 1982) to better 
+than 0.06 magnitude. For the cool end, K5I, M0I and M2I stars, the physical 
+parameters are taken from Leusque et al 2006, ApJ 645, 1102.
+
+
+
+         TABLE 2: Suggested models for specific stellar types
+
+             Type    T_{eff}    log_g       Kurucz model
+
+             O3V      44852     +3.92      ckp00_45000[g45]
+             O5V      40862     +3.92      ckp00_41000[g45]
+             O5.5V    39865     +3.92      ckp00_40000[g40]
+             O6V      38867     +3.92      ckp00_39000[g40]
+             O6.5V    37870     +3.92      ckp00_38000[g40]
+             O7V      36872     +3.92      ckp00_37000[g40]
+             O7.5V    35874     +3.92      ckp00_36000[g40]
+             O8V      34877     +3.92      ckp00_35000[g40]
+             O8.5     33879     +3.92      ckp00_34000[g40]
+             O9V      32882     +3.92      ckp00_33000[g40]
+             O9.5     31884     +3.92      ckp00_32000[g40]
+             B0V      30000     +3.90      ckp00_30000[g40]
+             B1V      25400     +3.90      ckp00_25000[g40]
+             B3V      18700     +3.94      ckp00_19000[g40]
+             B5V      15400     +4.04      ckp00_15000[g40]
+             B8V      11900     +4.04      ckp00_12000[g40]
+             B9V      11000     +4.04      ckp00_11000[g40]
+             A0V       9520     +4.14       ckp00_9500[g40]
+             A1V       9230     +4.10       ckp00_9250[g40]
+             A3V       8750     +4.20       ckp00_8750[g40]
+             A5V       8200     +4.29       ckp00_8000[g40]
+             F0V       7200     +4.34       ckp00_7250[g40]
+             F2V       6890     +4.34       ckp00_7000[g40]
+             F5V       6440     +4.34       ckp00_6500[g40]
+             F8V       6200     +4.40       ckp00_6250[g40]
+             G0V       6030     +4.39       ckp00_6000[g45]
+             G2V       5860     +4.40       ckp00_5750[g45]
+             G8V       5570     +4.50       ckp00_5500[g45]
+             K0V       5250     +4.49       ckp00_5250[g45]
+             K2V       4780      +4.5       ckp00_4750[g45]
+             K4V       4560      +4.5       ckp00_4500[g45]
+             K5V       4350     +4.54       ckp00_4250[g45]
+             K7V       4060      +4.5       ckp00_4000[g45]
+             M0V       3850     +4.59       ckp00_3750[g45]
+             M2V       3580     +4.64       ckp00_3500[g45]
+             M6V       3050     +5.00       ckp00_3500[g50]
+             B0III    29000     +3.34      ckp00_29000[g35]
+             B5III    15000     +3.49      ckp00_15000[g35]
+             G0III     5850     +2.94       ckp00_5750[g30]
+             G5III     5150     +2.54       ckp00_5250[g25]
+             K0III     4750     +2.14       ckp00_4750[g20]
+             K5III     3950     +1.74       ckp00_4000[g15]
+             M0III     3800     +1.34       ckp00_3750[g15]
+             BOI      26000     +2.84      ckp00_26000[g30]
+             B5I      13600     +2.44      ckp00_14000[g25]
+             AOI       9730     +2.14       ckp00_9750[g20]
+             A5I       8510     +2.04       ckp00_8500[g20]
+             F0I       7700     +1.74       ckp00_7750[g20]
+             F5I       6900     +1.44       ckp00_7000[g15]
+             G0I       5550     +1.34       ckp00_5500[g10]
+             G5I       4850     +1.14       ckp00_4750[g10]
+             K0I       4420     +0.94       ckp00_4500[g10]
+             K5I       3850     +0.00       ckp00_3750[g00]
+             M0I       3650     -0.10       ckp00_3750[g00]
+             M2I       3600     -0.10       ckp00_3500[g00]
+
+APPENDIX
+
+Below is an example of a standard header for the table files in the
+CDBS version of Castelli & Kurucz 2004 atlas. In this example the
+name of the file is ckp00_8000.fits and contains all the models for a
+star of [M/H]= 0.0 and effective temperature T_{eff}= 8000 K.
+Models cover a range of gravities from log_g= +1.0 (g10 in the
+header) to log_g= +5.0 (g50 in the header). Models for gravities
+log_g= +0.0 and +0.5 are not available for this particualr metal abundance
+and effective temperature combination, and therefore do not appear listed
+in the header. Their corresponding columns (g00 and g05) are filled with
+zeros. The models are in FLAM surface flux units,
+i.e. ergs cm^{-2} s^{-1} A^{-1}.
+
+          Header for table file ckp00_8000.fits
+
+
+
+ 1 TEFF        i 8000
+ 2 LOG_Z    d 0.
+ 3 HISTORY  t  File created by F.R.Boffi
+ 4 HISTORY  t  ATLAS9 model atmospheres by Castelli and Kurucz (2004).
+ 5 HISTORY  t  Wavelength is in Angstrom.
+ 6 HISTORY  t  Fluxes tabulated in units of erg/s/cm^2/A
+ 7 HISTORY  t  (after converting original units into "flam",
+ 8 HISTORY  t  as described in README file and the SYNPHOT manual)
+ 9 HISTORY  t  and are surface fluxes. To transform to observed
+10 HISTORY  t  fluxes multiply by (R/D)^2 where R is the
+11 HISTORY  t  radius of the star and D the distance.
+12 HISTORY  t  Each column in the table represents the
+13 HISTORY  t  spectrum of a star for the same metallicity
+14 HISTORY  t  and effective temperature but different gravity.
+15 HISTORY  t  Gravities range from log_g = +0.0 (g00 in the column
+16 HISTORY  t   header) to log_g = +5.0 (g50 in the column header).
+
+

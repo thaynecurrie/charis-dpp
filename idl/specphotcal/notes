@@ -1,0 +1,2 @@
+;new version of charis_specphot_cal allows 
+"calmethod = 5" flag, which will just take the flux calibration from another star and apply the conversion factor to this data set.

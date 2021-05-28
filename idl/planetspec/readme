@@ -1,0 +1,5 @@
+;folder contains routine to insert a planet into a data cube and a separate subdirectory to contain planet models
+
+charis_convert_planetspec.pro - this is called by the empircal comparison program right now.   I.e. a program needed to compare a CHARIS-res version of an empirical BD spectrum to a spectrum of something you have detected.
+
+-note: no documentation is given since these functions are never called from command line

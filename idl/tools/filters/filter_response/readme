@@ -1,0 +1,6 @@
+;****FILTER RESPONSE FUNCTIONS****
+
+;JHK MKO for CHARIS
+;Y,Lp and Ms for Keck/NIRC2
+
+;Feb 12, 2021 - replaced filter functions for JHK MKO to match NIRC2 filters.  Previous entries were likely the old IRCS response functions.
