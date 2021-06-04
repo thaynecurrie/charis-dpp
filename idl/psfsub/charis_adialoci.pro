@@ -770,11 +770,11 @@ c=c_use4[coeffstouse]
 endif
 endif
 
-if ~keyword_set(fwdmod) then goto,skipmatrixinversion
+;if ~keyword_set(fwdmod) then goto,skipmatrixinversion
 
 
 endif
-                if ~keyword_set(fwdmod) then begin
+                ;if ~keyword_set(fwdmod) then begin
                 ;matrix of linear system to solve
                 a=(aa[indim,*])[*,indim]
                 ;vector b of a linear system to solve
@@ -790,6 +790,7 @@ endif
                 c=invert(a,/double)#b
                 endelse
 
+                if ~keyword_set(fwdmod) then begin
                 ;construct the reference
                 skipmatrixinversion:
 
