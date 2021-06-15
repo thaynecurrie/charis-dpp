@@ -134,7 +134,8 @@ exptime_sci=exp1time*coadds
 
 ;subtract sky.   For now do a simple subtraction since the PSF halo contaminates an estimate of the sky background
 if (~keyword_set(scalesky) and ~keyword_set(scaleindchan)) then begin
-imcube-=master_skycube*exptime_sci/max(skytime)
+imcube-=master_skycube
+;*exptime_sci/max(skytime)
 endif else begin
 ;take the last channel (the most contaminated one in low-res) scale by average signal
 dist_circle,gg,201

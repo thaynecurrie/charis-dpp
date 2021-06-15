@@ -796,8 +796,6 @@ endfor
 
 if keyword_set(verbose) then print,satflux[*,19]/esatflux[*,19]
 
-help,satfluxf,esatfluxf
-
 ;if n_elements(ncal) gt 1 then begin
 if ncal gt 1 then begin
 satfluxf=reform(median(satflux,/even,dimension=1))
