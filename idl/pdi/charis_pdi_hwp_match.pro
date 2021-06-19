@@ -1,4 +1,4 @@
-pro charis_pdi_hwp_match, pfname, hwpfile=hwpfile, prefname=prefname, suffname=suffname, hwpfileout=hwpfileout, help=help
+pro charis_pdi_hwp_match, pfname, hwpfilein=hwpfilein, prefname=prefname, suffname=suffname, hwpfileout=hwpfileout, help=help
 
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,'charis_pdi_hwp_match.pro: Uses HWP log to assign a HWP angle to each frame,'
@@ -14,7 +14,7 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,''
     print,"***Keywords***"
     print,'pfname=STRING - The parameter file (e.g. HR8799_low.info)'
-    print,"hwpfile=STRING - path to HWP log from Subaru. Default: searches for filename like 'vampHWPLog_*.csv'"
+    print,"hwpfilein=STRING - path to HWP log from Subaru. Default: searches for filename like 'vampHWPLog_*.csv'"
     print,"prefname=STRING - The prefix of files to use as input. Defaults to 'n'."
     print,"suffname=STRING - The suffix of files to use as input. Defaults to 'leftreg_cal' if present, or 'leftreg' otherwise."
     print,"hwpfileout=STRING - File into which to save HWP angles and matches. Defaults to 'hwp_info.txt'."
@@ -24,23 +24,23 @@ endif
 reducdir='./reduc/'
 datadir=reducdir+'reg/'
 
-if ~keyword_set(hwpfile) then begin
+if ~keyword_set(hwpfilein) then begin
     hwp_search = file_search('./', 'vampHWPLog_*.csv', count=nfiles)
     if nfiles eq 1 then begin
-        hwpfile = hwp_search[0]
+        hwpfilein = hwp_search[0]
         print,'Using HWP log file:'
-        print,hwpfile
+        print,hwpfilein
     endif else begin
         if nfiles eq 0 then begin
             print,'No HWP log file found (e.g. "vampHWPLog_*.csv).'
             print,'Please add a HWP log file to your working directory,'
             print,'or explicitly indicate the file to use by setting'
-            print,'the keyword "hwpfile".'
+            print,'the keyword "hwpfilein".'
         endif else begin
             print,'Multiple HWP log files found:'
             print, hwp_search
             print,'Please explicitly indicate the file to use by setting'
-            print,'the keyword "hwpfile" to the file you wish to use.'
+            print,'the keyword "hwpfilein" to the file you wish to use.'
         endelse
         goto,endofprogram
     endelse
@@ -76,7 +76,7 @@ hwp_pos=intarr(nfiles)
 utcexp=fltarr(nfiles)
 parangs=fltarr(nfiles)
 
-readcol,hwpfile,angs,utstart_string,utend_string,target,format='(f,a,a,a)'
+readcol,hwpfilein,angs,utstart_string,utend_string,target,format='(f,a,a,a)'
 uni_angs = angs[uniq(angs, sort(angs))]
 
 ; There are at least two utilized formats for PDI logs: 

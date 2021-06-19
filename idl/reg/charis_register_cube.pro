@@ -656,23 +656,23 @@ if parangle0 gt 180 and decdeg lt lat then parangle0-=360
 
 for il=0L,refsz[3]-1 do begin
 
-gcntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhm[il]
+gcntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim
 
 if (xc1 lt 0 or yc1 lt 0) then begin
-cntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhm[il],/keepcenter
+cntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim,/keepcenter
 endif
 
 if keyword_set(revise) then begin
 
 if (xc1 lt 0 or yc1 lt 0) then begin
-cntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhm[il],extendbox=3
+cntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim,extendbox=3
 endif
 
 if keyword_set(splitpsf) then begin
 
-az=sumaper_im(smooth(a[*,*,il],2),fwhm[il],30,/nan)
+az=sumaper_im(smooth(a[*,*,il],2),fwhmlim,30,/nan)
 ;cntrd,az,xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhm[il],extendbox=3
-cntrd,az,xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhm[il]
+cntrd,az,xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim
 endif
 
 if keyword_set(keepprev) then begin

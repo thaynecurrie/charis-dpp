@@ -5,7 +5,7 @@ notimeratio=notimeratio,$
 meancomb=meancomb,$
 fixradius=fixradius,$
 ap_factor=ap_factor,$
-filtername=fname,$
+filtername=filtername,$
 starlib=starlib,$
 empspectrum=empspectrum,$
 av=av,$
@@ -16,6 +16,7 @@ verbose=verbose,$
 fluxunits=fluxunits,$
 outfilename=outfilename,$
 fov_mask_pars=fov_mask_pars,$
+unsat=unsat,$
 help=help
 
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
@@ -37,6 +38,7 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,"prefname=STRING - The prefix of files to use as input. Defaults to 'n'."
     print,"Lsuffname=STRING - The suffix of left pol files to use as input. Defaults to 'leftreg'."
     print,"Rsuffname=STRING - The suffix of right pol files to use as input. Defaults to 'rightreg'."
+    print,"/unsat - Use charis_specphotcal_unsat instead of charis_specphot_cal; appropriate for unsaturated, unocculted data"
     print,"fov_mask_pars=ARRAY - Three element array providing the x-axis width (pixels), y-axis width (pixels), and angle (degrees) to use in creating a mask of the valid field of view. Defaults to the full frame."
     print,"Other keywords as accepted by 'charis_specphot_cal'."
     goto,endofprogram
@@ -96,9 +98,15 @@ for i=0,nfiles-1 do begin
 endfor 
 
 ; Run charis_specphot_cal on our intensity images.
-charis_specphot_cal, pfname, calmethod=calmethod, pick=pick, datacube=datacube, calcube=calcube, modamp=modamp, subskyannulus=subskyannulus, filtcal_slice=filtcal_slice, nopradcal=nopradcal, notimeratio=notimeratio,$
-meancomb=meancomb, fixradius=fixradius, ap_factor=ap_factor, filtername=fname, starlib=starlib, empspectrum=empspectrum, av=av,$
-prefname='n', suffname='_tmp', verbose=verbose, fluxunits=fluxunits, outfilename=outfilename, help=help
+if keyword_set(unsat) then begin
+    charis_specphot_cal_unsat, pfname, calmethod=calmethod, pick=pick, datacube=datacube, calcube=calcube, subskyannulus=subskyannulus, filtcal_slice=filtcal_slice, nopradcal=nopradcal,$
+    meancomb=meancomb, fixradius=fixradius, ap_factor=ap_factor, filtername=filtername, starlib=starlib, empspectrum=empspectrum, av=av,$
+    prefname='n', suffname='_tmp', verbose=verbose, fluxunits=fluxunits, outfilename=outfilename, help=help
+endif else begin
+    charis_specphot_cal, pfname, calmethod=calmethod, pick=pick, datacube=datacube, calcube=calcube, modamp=modamp, subskyannulus=subskyannulus, filtcal_slice=filtcal_slice, nopradcal=nopradcal, notimeratio=notimeratio,$
+    meancomb=meancomb, fixradius=fixradius, ap_factor=ap_factor, filtername=filtername, starlib=starlib, empspectrum=empspectrum, av=av,$
+    prefname='n', suffname='_tmp', verbose=verbose, fluxunits=fluxunits, outfilename=outfilename, help=help
+endelse
 
 files_tmp_cal = reducdir+filelist(filenum_pol, nfiles, prefix='n', suffix='_tmp_cal')
 files_polleft_cal = reducdir+filelist(filenum_pol, nfiles, prefix=prefname, suffix=Lsuffname+'_cal')
