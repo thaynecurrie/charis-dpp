@@ -30,7 +30,7 @@ endif
 
 charis_setupdir
 ;SPAWN,'mv CRSA*fits ./data/raw/'
-if (!version.so_family EQ 'Windows') then begin
+if (!version.os_family EQ 'Windows') then begin
 SPAWN,'move CRSA*cube.fits ./data/raw/'
 endif else begin
 SPAWN,'mv CRSA*cube.fits ./data/raw/'
