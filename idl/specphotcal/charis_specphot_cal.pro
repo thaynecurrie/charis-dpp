@@ -707,10 +707,10 @@ endelse
 
        imslicemask=imslice
 ;SNR calculation per slice to get the background rms within an aperture, perform this on images with the sat spots masked out.
-       dist_circle,mask1,dimcal[0],[cens[0,0,il],cens[1,0,il]]
-       dist_circle,mask2,dimcal[0],[cens[0,1,il],cens[1,1,il]]
-       dist_circle,mask3,dimcal[0],[cens[0,2,il],cens[1,2,il]]
-       dist_circle,mask4,dimcal[0],[cens[0,3,il],cens[1,3,il]]
+       dist_circle,mask1,dimcal[0],cens[0,0,il],cens[1,0,il]
+       dist_circle,mask2,dimcal[0],cens[0,1,il],cens[1,1,il]
+       dist_circle,mask3,dimcal[0],cens[0,2,il],cens[1,2,il]
+       dist_circle,mask4,dimcal[0],cens[0,3,il],cens[1,3,il]
        masksat=where(mask1 le aperradf or mask2 le aperradf or mask3 le aperradf or mask4 le aperradf,nmasksat)
        imslicemask[masksat]=!values.f_nan
        charis_snratio_sub,imslicemask,fwhm=aperradf*2,/finite,noisemap=noisemap_slice,/silent

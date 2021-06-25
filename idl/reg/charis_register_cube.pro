@@ -349,7 +349,7 @@ endif
  cens0p=cv_coord(from_rect=cens0-c0,/to_polar)
 initial_centroid=median(cens0,dimension=2,/even)
 
-dist_circle,g,[sz[1],sz[2]]
+;dist_circle,g,[sz[1],sz[2]]
 
 PSFcens=fltarr(2,sz[3])
 deltax=fltarr(sz[3])
@@ -612,7 +612,7 @@ endfor
          endif
          xoo=refsz[1]/2+guessoffsets[0] & yoo = refsz[2]/2+guessoffsets[1]
 
-         dist_circle,g,[refsz[1],refsz[2]],xoo,yoo
+         ;dist_circle,g,[refsz[1],refsz[2]],xoo,yoo
 
 ;Telescope Diameter for Subaru
 ;Dtel=7.9d0 ;visible pupil for SCExAO
