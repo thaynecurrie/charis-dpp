@@ -192,7 +192,7 @@ aper,im,xcf,ycf,flux,eflux,sky,skyerr,10,fwhm*0.5,/nan,/exact,setskyval=0,/flux,
 if finite(flux) eq 0 then begin
 
 endif else begin
-snrval=flux/imnoise[xcf,ycf]
+snrval=flux/imnoise[round(xcf),round(ycf)]
 ;print,flux,im1[xcf,ycf]
 ;stop
 endelse
