@@ -1,8 +1,9 @@
 pro charis_calc_spec_covar,data_cube,rho=rho,$
 prad=prad,filt=filt,normnoise=normnoise,width=width,step=step,$
 maxfit=maxfit,minfit=minfit,$
-maskresspot=maskresspot,maskcoord=maskcoord,fixpos=fixpos,excval=excval,outparams=outparams
+maskresspot=maskresspot,maskcoord=maskcoord,fixpos=fixpos,excval=excval,outparams=outparams,help=help
 
+;07-21-2021 - code is now documented
 ;NOTE: CODE UNDER DEVELOPMENT/NOT SUPPORTED BY PIPELINE YET and NOT DOCUMENTED
 
 ;code to calculate the spectral covariance
@@ -14,6 +15,29 @@ maskresspot=maskresspot,maskcoord=maskcoord,fixpos=fixpos,excval=excval,outparam
 ;normnoise = normalize by the robust standard deviation of the noise first (recommended.)
 ;step = step size in rho*(lam[i]-lam[j])/lam_c to compute an averaged psi[i,j]
 ;maskcoord= mask a point source here.
+
+if (N_PARAMS() eq 0 or keyword_set(help)) then begin
+print,'charis_calc_spec_covar: calculates the spectral covariance of a PSF subtracted data cube'
+print,'written by T. Currie (2018)'
+print,'**Calling Sequence**'
+print,'charis_calc_spec_covar,data_cube,rho=rho,prad=prad,filt=filt,normnoise=normnoise,width=width,step=step,'
+print,'maxfit=maxfit,minfit=minfit,maskresspot=maskresspot,maskcoord=maskcoord,fixpos=fixpos,excval=excval,outparams=outparams'
+print,''
+print,'Example:'
+print,"charis_calc_spec_covar,'alocihd1160.fits',rho=18.9,maskcoord=[144,78],/outparams"
+print,''
+print,"***Important Keywords***"
+print,'data_cube -- your PSF subtracted data cube.  (You have to give the full path)'
+print,'*rho - angular separation in lambda/D units at 1.6 microns where the covariance is evaluated (e.g. rho=20 is ~0.86")'
+print,'*prad - subtract a radial profile of the image slice first (sometimes helpful) '
+print,'*normnoise - normalize by the robust standard deviation of the noise (usually helps)'
+print,'*step - step size in rho*(lam[i]-lam[j])/lam_c to compute an averaged psi[i,j] (usually dont change this)'
+print,'*maskcoord - x,y coordinates of a point source to mask (ALWAYS do this if you have a bright companion)'
+print,''
+print,'*outparams - do you want to save the covariance function to a file? (REQUIRED for charis_empbdplanspec.pro!!!!)'
+
+goto,skiptoend
+endif
 
 ;Procedure ...
 
@@ -395,6 +419,7 @@ outparams=[fitresult[0],fitresult[1],1-(fitresult[0]+fitresult[1]),$
  fitresult[2],fitresult[3]]
 endif
 
+skiptoend:
 end
 
  
