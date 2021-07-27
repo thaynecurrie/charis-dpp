@@ -1,7 +1,7 @@
-pro charis_adialoci,pfname,prefname=prefname,nfwhm=nfwhm,drsub=drsub0,na=na,geom=geom,$
+pro charis_adialocif,pfname,prefname=prefname,nfwhm=nfwhm,drsub=drsub0,na=na,geom=geom,zonetype=zonetype,$
 svd=svd,$
 pixmask=pixmask,$
-meanadd=meanadd,$
+meanadd=meanadd,nweight=nweight,$
 zero=zero,$
 nref=nref,$
 savecoeff=savecoeff,$
@@ -14,16 +14,22 @@ rmin=rmin,rmax=rmax,$
 fc=fc,fwdmod=fwdmod,$
 norot=norot,angoffset=angoffset,$
 outfile=outfile,$
+debug=debug,$
+np=np,$
  guide=guide,help=help
 
-;****Public, Pipeline-Release ADI/A-LOCI code****
-
+;****Proprietary ADI/A-LOCI  code****
+;***5/9/2021**
+;Version 2.5 - now adds least squares on planet/disk-removed references.
 ;***3/6/2021**
 ;Version 2.4 - now can do ADI on post-SDI cubes
+
+;***10/26/2020**
+;Version 2.3.1 - zone geometry free parameter; zone geometry free parameter/calculations fixed; CHECK the outlier rejection for opt. zones!, changed fits header record of zonetype to 'adiztype'
 ;***10/6/2020**
-;Version 2.3 - renamed code from charis_sublocirx to charis_adialoci
+;Version 2.3 - renamed code from charis_sublocirx to charis_adialoci: Still need to employ Tik.Reg, better corr-frame sel, and make zone geometry free parameter
 ;***06/04/2020**
-;Version 2.2 - cleaned up better.  
+;Version 2.2 - cleaned up better.  Still need to employ Tik.Reg, better corr-frame sel, and make zone geometry free parameter
 ;***06/11/2018**
 ;Version 2.1 - now can do single channel reductions (useful for iterative nulling/neg. planets)
 
@@ -45,11 +51,11 @@ outfile=outfile,$
 ;adapted for CHARIS, for now
 
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
-print,'charis_adialoci.pro: ALOCI PSF subtraction method, Version 2.2'
-print,'Written by T. Currie (2011-2014), adapted for CHARIS IFS Data (4/2017), updated 6/2020'
+print,'charis_adialocif.pro: ALOCI PSF subtraction method, Version 2.2'
+print,'Written by T. Currie (2011-2014), adapted for CHARIS IFS Data (4/2017), updated 10/2020'
 print,''
 print,'**Calling Sequence**'
-print,"charis_adialoci,pfname,prefname=prefname,postsdi=postsdi,nfwhm=nfwhm,rmin=rmin,rmax=rmax,drsub=drsub0,na=na,geom=geom,svd=svd,nref=nref,pixmask=pixmask,meanadd=meanadd,zero=zero,rsubval=rsubval,"
+print,"charis_adialoci,pfname,prefname=prefname,postsdi=postsdi,nfwhm=nfwhm,rmin=rmin,rmax=rmax,drsub=drsub0,na=na,geom=geom,zonetype=zonetype,svd=svd,nref=nref,pixmask=pixmask,meanadd=meanadd,nweight=nweight,zero=zero,rsubval=rsubval,"
 print,"fwdmod=fwdmod,savecoeff=savecoeff,usecoeff=usecoeff,channel=channel,prefname=prefname,suffname=suffname,fc=fc"
 print,"norot=norot,angoffset=angoffset,outfile=outfile"
 print,''
@@ -59,6 +65,7 @@ print,''
 print,"***Important Keywords***"
 print,'*pfname - parameter file (e.g. HR8799_low.info)'
 print,"*postsdi - are you doing ADI on the post-SDI residuals [so set /postsdi]"
+print,"*zonetype- type of opt/sub zone geometry (0 - La07 zones [default], 1 - annulus, TLOCI, 2 - Cu14 sub-zone flanked, 3 - Cu21 s-zone centered)"
 print,"*nfwhm - rotation gap/exclusion zone (in lambda/D units)"
 print,"*rmin - minimum radius of subtraction"
 print,"*rmax - maximum radius of subtraction"
@@ -66,10 +73,12 @@ print,"*drsub - radial width of subtraction region"
 print,"*rsubval - set to 1 to use spatially filtered data [usually the right decision]"
 print,"*na - optimization area (in units of PSF cores)"
 print,"*geom - geometry of subtraction & optimization zones"
+print,"*zonetype- type of opt/sub zone geometry (0 - La07 zones [default], 1 - annulus, TLOCI, 2 - Cu14 sub-zone flanked, 3 - Cu21 s-zone centered)"
 print,"*svd - SVD cutoff for covariance matrix inversion"
 print,"*nref - construct a reference PSF from the 'nref'-most correlated frames"
 print,"*pixmask - set to 1 to mask the subtraction zone (moving-pixel mask)"
 print,"*meanadd - use a robust mean combination instead of median"
+print,"*nweight - [0 - no noise weighting, 1 noise-weighted mean]
 print,"*zero - do you subtract off the median of a region after PSF-subtracting?"
 print,"*norot - do NOT rotate images north-up [set this switch if you want to do SDI later]"
 print,"*savecoeff - save the coefficients in a file [for forward-modeling]"
@@ -80,8 +89,6 @@ print,"*outfile - the name of the output file"
 
 goto,endofprogram
 endif
-
-starttime=systime(/seconds)
 
 if ~keyword_set(angoffset) then angoffset=charis_get_constant(name='angoffset') ;nominally 2.2 deg
 
@@ -137,13 +144,10 @@ file_mkdir,tmpdir
 
 ;create list of filenames
 
-;param,'obsdate',date,/get,pfname=pfname & date=strtrim(date,2)
-
 param,'fnum_sat',flist,/get,pfname=pfname
 
 ;*** Prefixes***
 if ~keyword_set(prefname) then prefname='n'
-;***edit: again, assume no radial profile subtraction for now.
 
 if (~keyword_set(suffname) and ~keyword_set(postsdi)) then begin
 if (rsubval gt 0) then begin
@@ -161,8 +165,6 @@ endif
 
 if (keyword_set(postsdi) and ~keyword_set(suffname)) then suffname='_sdialocisub'
 
-;*****
-
 filenum=nbrlist(flist)
 
 if ~keyword_set(fc) then begin
@@ -177,6 +179,10 @@ endif else begin
 files=filelist(filenum,nfiles,prefix=prefname,suffix=suffname+'_fc')
 endelse
 
+endif
+
+if keyword_set(np) then begin
+filesnp=filelist(filenum,nfiles_sci,prefix=prefname,suffix=suffname+'_fc')
 endif
 
 
@@ -198,7 +204,6 @@ nlist=indgen(nfiles)
 
 ;*************
 ;print,files
-;stop
 ;*************
 
 ;Define region for spider mask, the image FWHM, and the saturation radius
@@ -209,6 +214,10 @@ param,'rsat',rsat,/get,pfname=pfname
 
 ;LOCI algorithm parameters
 ;nfwhm, drsub,na,and geom
+
+if ~keyword_set(zonetype) then begin
+zonetype = 0
+endif
 
 if ~keyword_set(nfwhm) then begin
     param,'nfwhm',nfwhm,/get,pfname=pfname
@@ -258,6 +267,9 @@ if ~keyword_set(meanadd) then begin
   param,'meanadd',meanadd,/get,pfname=pfname
 endif
 
+;long-term: add noise weighting to parameter file as a variable
+if ~keyword_set(nweight) then nweight=0
+
 ;**get dim from first image header
 test=readfits(reducdir1+files[0],/exten,h1)
 h0=headfits(reducdir1+files[0],ext=0)
@@ -283,6 +295,9 @@ print,size(test)
 filter=sxpar(h0,'FILTNAME')
 get_charis_wvlh,h0,wavelengths
 lambda=wavelengths*1.d-3
+
+;variance map
+varmapcube=fltarr(dim,dim,n_elements(lambda),nfiles)
 
 ;**Which Telescope?? Latitude/Longitude
 lat=double(sxpar(h0,'lat',count=latmatch)) 
@@ -325,25 +340,9 @@ endif
 dtmean=mean((abs(allpa-shift(allpa,-1)))[0:nfiles-2])*!dtor
 
 ;determine radii
-if n_elements(drsub0 eq 1) then begin
     nrsub=ceil((rmax-rmin)/drsub0)
     rsub=findgen(nrsub)*drsub0+rmin
     drsub=replicate(drsub0,nrsub)
-;above line is why code sometimes crashes in loop!
-endif else begin
-    nrsub=0
-    r=rmin
-    rsub=fltarr(1000)
-    drsub=fltarr(1000)
-    while r lt rmax do begin
-        dr=((0.5+atan((r-drsub0[2])/drsub0[3])/!pi)*(drsub0[1]-drsub0[0])+drsub0[0])
-        rsub[nrsub]=r
-        drsub[nrsub]=dr
-        r+=dr
-        nrsub+=1
-    endwhile
-    rsub=rsub[0:nrsub-1] & drsub=drsub[0:nrsub-1]
-endelse
 drsub=drsub<(rmax-rsub)
 
 ;array of distances and angles to determine indices in each section
@@ -351,9 +350,6 @@ distarr=shift(dist(dim),dim/2,dim/2)
 ang=(angarr(dim)+2.*!pi) mod (2.*!pi)
 
 ;Wavelength Loop, ADI per Wavelength
-;we want ADI for datacubes, i.e. several spectral channels but also for
-      ;other type of data: collapsed datacubes, single spectral channel ADI, ADI after SDI,etc...
-      ; so we have to verify the dimension of ADI inputs hereafter:
 
 for il=0,n_elements(lambda)-1 do begin
 
@@ -368,6 +364,7 @@ if (il_use eq !null) eq 0 then begin
 coeffstouse=where(il_use eq il,ncoeffstouse)
 if ncoeffstouse gt 0 then begin
 c_use2=ck_use[coeffstouse]
+;il_use2=il_use[coeffstouse]
 ir_use2=ir_use[coeffstouse]
 it_use2=it_use[coeffstouse]
 nf_use2=nf_use[coeffstouse]
@@ -382,18 +379,38 @@ print,'LOCI Wavelength '+strtrim(il+1,2)+'/'+strtrim(n_elements(lambda),2)
 ;Put this outside of the loop so you save time.
 fwhm=1.0*(1.d-6*lambda[il]/Dtel)*(180.*3600./!dpi)/pixscale
 
-print,fwhm,lambda[il],Dtel,pixscale
+;commented line not needed
+;print,fwhm,lambda[il],Dtel,pixscale
 
 ;estimates the largest optimization radius needed
 rimmax=0.
 for ir=0,nrsub-1 do begin
     r=rsub[ir]
-    if n_elements(na) eq 1 then area=na*!pi*(fwhm/2.)^2 $
-      else area=((0.5+atan((r-na[2])/na[3])/!pi)*(na[1]-na[0])+na[0])*!pi*(fwhm/2.)^2
-    ;width of optimization radius desired
+    area=na*!pi*(fwhm/2.)^2 
     dropt=sqrt(geom*area)
-    nt=round((2*!pi*(r+dropt/2.)*dropt)/area)>1
-    dropt=sqrt(r^2+(nt*area)/!pi)-r
+    ;width of optimization radius desired
+case zonetype of
+     0: begin
+       nt=round((2*!pi*(r+0.5*dropt)*dropt)/area) > 1
+       dropt=sqrt(r^2.+(nt*area)/!pi)-r
+       end
+
+;this will overestimate actual dropt size since dropt = dr for zonetype=1, retain for now
+    1: begin
+       nt=round((2*!pi*(r+0.5*dropt)*dropt)/area) > 1
+       end
+
+    2:begin
+       nt=round((2*!pi*(r+0.5*dropt)*dropt)/area) > 1
+       dropt=sqrt(r^2.+(nt*area)/!pi)-r
+      end
+
+    3:begin
+      nt=round((2*!pi*(r+0.5*drsub[ir])*dropt)/area) > 1
+      dropt=(nt*area)/(2.*!pi*(r+drsub[ir]/2.))
+      end
+ endcase
+
     rimmax>=r+dropt
 endfor
 rimmax<=1.1*dim/2 ;for CHARIS
@@ -404,9 +421,24 @@ rimmax<=1.1*dim/2 ;for CHARIS
 drim=5.
 
 nrim=ceil((rimmax-rmin)/drim)
+
+case zonetype of
+   3: begin
+offset=rmin-dropt/2.-drsub[0]/2.
+offset >= 0
+nrim=ceil((rimmax-offset)/drim)
+rim=findgen(nrim)*drim+offset
+      end
+   else: begin
+nrim=ceil((rimmax-rmin)/drim)
 rim=findgen(nrim)*drim+rmin
-print,'stuff',nrim,drim,rmin
-;determine indices of pixels included in each ring
+offset=rmin
+         end
+endcase
+
+;rim[*]>= 0
+
+;determine indices of pixels included in each annulus
 ;DRIM of pixels and save them to disk
 
 for ir=0,nrim-1 do begin
@@ -423,7 +455,7 @@ endfor
 el=dblarr(nfiles) & az=dblarr(nfiles)
 dec=dblarr(nfiles) & decdeg=dblarr(nfiles)
 dtpose=dblarr(nfiles)
-noise_im=fltarr(nrim,nfiles)
+;noise_im=fltarr(nrim,nfiles)
 
 for nf=0,nfiles-1 do begin
     h0=headfits(reducdir1+files[nf],/silent,ext=0)
@@ -432,15 +464,20 @@ for nf=0,nfiles-1 do begin
     im_fwd=(readfits(reducdir1+filesfwd[nf],/exten,horig,/silent))[*,*,il]
     endif
 
-    ;print,'reading in file 'files[nf]
+    if keyword_set(np) then begin
 
-    norm=0
-    if norm then begin
-        ;normalize image by radial profile noise
-        profrad,abs(im),2.,0.,rimmax,p2d=pr
-        im/=pr
-        writefits,tmpdir+filesprof[nf],pr
+    imnp=(readfits(reducdir1+filesnp[nf],/exten,horignp,/silent))[*,*,il]
     endif
+
+
+;the following is not set
+;    norm=0
+;    if norm then begin
+;        ;normalize image by radial profile noise
+;        profrad,abs(im),2.,0.,rimmax,p2d=pr
+;        im/=pr
+;        writefits,tmpdir+filesprof[nf],pr
+;    endif
 
     for ir=0,nrim-1 do begin
         ia=read_binary(tmpdir+'indices_a'+nbr2txt(ir,3)+'.dat',data_type=3)
@@ -448,14 +485,21 @@ for nf=0,nfiles-1 do begin
         openw,funit,tmpdir+'values_a'+nbr2txt(ir,3)+'.dat',/get_lun,append=(nf gt 0)
         writeu,funit,float(im[ia])
         free_lun,funit
+ 
         if keyword_set(fwdmod) then begin
         openw,funit,tmpdir+'values_fwd'+nbr2txt(ir,3)+'.dat',/get_lun,append=(nf gt 0)
         writeu,funit,float(im_fwd[ia])
         free_lun,funit
         endif
 
-        ;calcule le bruit dans cet anneau
-        noise_im[ir,nf]=median(abs(im[ia]-median(im[ia])))/0.6745
+        if keyword_set(np) then begin
+        openw,funit,tmpdir+'values_np'+nbr2txt(ir,3)+'.dat',/get_lun,append=(nf gt 0)
+        writeu,funit,float(imnp[ia])
+        free_lun,funit
+        endif
+
+        ;noise calculation - not used for now
+        ;noise_im[ir,nf]=median(abs(im[ia]-median(im[ia])))/0.6745
     endfor
 
 ;**note: the GPI pipeline just reads in 'DEC' from the keyword.  Here, we read it from the fits header.
@@ -488,8 +532,10 @@ endif
         string(r,format='(f5.1)')+$
         ' [>='+string(ri,format='(f5.1)')+', <'+string(rf,format='(f5.1)')+']...'
 
-    if n_elements(na) eq 1 then area=na*!pi*(fwhm/2.)^2 $
-      else area=((0.5+atan((r-na[2])/na[3])/!pi)*(na[1]-na[0])+na[0])*!pi*(fwhm/2.)^2
+    ;aire de region a ce rayon
+    ;area of this region has radius
+
+    area=na*!pi*(fwhm/2.)^2
 
     ;width of desired optimization annulus
     dropt=sqrt(geom*area)
@@ -501,67 +547,109 @@ endif
         stop
     endif
 
-    ;***determining the area optimization for this annulus removal
+    ;***determining optimization/subtraction area loop size (integer)
     ;for region removed in early reg_optimization
 
-    if 1 then begin
         r1opt=ri
-        ;number of annulus section
-        nt=round((2*!pi*(r1opt+dropt/2.)*dropt)/area)>1
-        ;print,'nt is',nt,r1opt,dropt,area
 
-        ;dropt for annulus with sections of exact area
+case zonetype of
+    0: begin
+       nt=round((2*!pi*(r1opt+0.5*dropt)*dropt)/area) > 1
+       ntz=round((2*!pi*(r1opt+0.5*dropt)*dropt)/area) > 1
+       dropt=sqrt(r1opt^2.+(nt*area)/!pi)-r1opt
+       fac1=0
+       fac2=0
+       end
 
-        dropt=sqrt(r1opt^2+(nt*area)/!pi)-r1opt
+    1: begin
+       nt=round(geom*(2*!pi*(r1opt+0.5*dr)*dr)/(dr*dr)) > 1
+       ntz=round(geom*(2*!pi*(r1opt+0.5*dr)*dr)/(dr*dr)) > 1
+       ;dropt=sqrt(r1opt^2.+(ntz*area)/!pi)-r1opt
+       dropt=dr
+       fac1=0
+       fac2=1
+       end
+
+    2:begin
+       nt=round((2*!pi*(r1opt+0.5*dropt)*dropt)/area) > 1
+       ntz=round(geom*(2*!pi*(r1opt+dr/2.)*dr)/(dr*dr))>1
+      fac1=0
+      fac2=0
+       dropt=sqrt(r1opt^2.+(nt*area)/!pi)-r1opt
+      end
+
+    3:begin
+      nt=round((2*!pi*(r1opt+0.5*dr)*dropt)/area) > 1
+      ntz=round(geom*(2*!pi*(r1opt+dr/2.)*dr)/(dr*dr))>1
+      fac1=0.5
+      fac2=0.5
+      dropt=(nt*area)/(2.*!pi*(r1opt+dr/2.))
+      end
+endcase 
         r2opt=r1opt+dropt
 
+
+;this almost never happens
         if r2opt gt rim[nrim-1]+drim then begin
             r2opt=rim[nrim-1]+drim
             dropt=r2opt-r1opt
-            nt=round((2*!pi*(r1opt+dropt/2.)*dropt)/area)>1
+case zonetype of
+    0: begin
+       nt=round((2*!pi*(r1opt+0.5*dropt)*dropt)/area) > 1
+       ntz=round((2*!pi*(r1opt+0.5*dropt)*dropt)/area) > 1
+       ;dropt=sqrt(r1opt^2.+(nt*area)/!pi)-r1opt
+       fac1=0
+       fac2=0
+       end
+
+    1: begin
+       nt=round(geom*(2*!pi*(r1opt+0.5*dr)*dr)/(dr*dr)) > 1
+       ntz=round(geom*(2*!pi*(r1opt+0.5*dr)*dr)/(dr*dr)) > 1
+       ;dropt=sqrt(r1opt^2.+(nt*area)/!pi)-r1opt
+       dropt=dr
+       fac1=0
+       fac2=1
+       end
+
+    2:begin
+       nt=round((2*!pi*(r1opt+0.5*dropt)*dropt)/area) > 1
+       ntz=round(geom*(2*!pi*(r1opt+dr/2.)*dr)/(dr*dr))>1
+      fac1=0
+      fac2=0
+       ;dropt=sqrt(r1opt^2.+(nt*area)/!pi)-r1opt
+      end
+
+    3:begin
+      nt=round((2*!pi*(r1opt+0.5*dr)*dropt)/area) > 1
+      ntz=round(geom*(2*!pi*(r1opt+dr/2.)*dr)/(dr*dr))>1
+      fac1=0.5
+      fac2=0.5
+      ;dropt=(nt*area)/(2.*!pi*(r1opt+dr/2.))
+      end
+endcase
         endif
-    endif
 
-    ;subtracted for region in central reg_optimization
-    if 0 then begin
-        ;number of annulus section
 
-        nt=round((2*!pi*r*dropt)/area)>1
+        rinnerrad=rmin-dr > 0.001
+        ;opt_inner=ri+fac1*dr-fac1*dropt > rmin
+        opt_inner=ri+fac1*dr-fac1*dropt > rinnerrad
+        opt_outer=ri+fac2*dr+(1-fac2)*dropt < rimmax
 
-         ;and for optimization the center annulus on r
-         ;dr_opt for sections with exact area
-
-        dropt=(area*nt)/(2.*!pi*r)
-        r1opt=r-dropt/2.
-        r2opt=r+dropt/2.
-    
-        if r1opt lt rmin then begin
-            r1opt=rmin
-            dropt=sqrt(geom*area)
-            nt=round((2*!pi*(r1opt+dropt/2.)*dropt)/area)>1
-            r2opt=sqrt((area*nt)/!pi+r1opt^2)
-            dropt=r2opt-r1opt
-        endif
-        if r2opt gt rim[nrim-1]+drim then begin
-            r2opt=rim[nrim-1]+drim
-            dropt=sqrt(geom*area)
-            nt=round((2*!pi*(r2opt-dropt/2.)*dropt)/area)>1
-            r1opt=sqrt(r2opt^2-(area*nt)/!pi)
-            dropt=r2opt-r1opt
-        endif
-    endif
-
-    ;determines what image to load into memory
-    i1aim=floor((r1opt-rmin)/drim)
-    i2aim=floor((r2opt-rmin)/drim)
-        ;print,i2aim,i1aim,n_elements(rim),rim[i2aim],sqrt(geom*area)
+    ;determines what image radii to load into memory
+    i1aim=floor((opt_inner-offset)/drim)
+    i2aim=floor((opt_outer-offset)/drim)
+  
     if i2aim eq nrim then i2aim-=1
-    if rim[i2aim] eq r2opt then i2aim-=1
+    if rim[i2aim] eq opt_outer then i2aim-=1
     iaim=indgen(i2aim-i1aim+1)+i1aim
 
     ;removes the annuli that aren't necessary
-   
+  ;removing the annuli with zonetype = 1 keeps triggering a memory error.   This case structure is a simple workaround. 
+case zonetype of
+   1:begin
+    end
 
+   else:begin 
     if ir gt 0 then begin
         irm=where(distarr[ia] lt rim[i1aim] or distarr[ia] ge rim[i2aim]+drim,crm,complement=ikp)
         if crm gt 0 then remove,irm,ia
@@ -569,20 +657,20 @@ endif
         if keyword_set(fwdmod) then begin
         if crm gt 0 then annuli_fwd=annuli_fwd[ikp,*]
         endif
-    endif
 
+       ;planets removed
+        if keyword_set(np) then begin
+        if crm gt 0 then annuli_np=annuli_np[ikp,*]
+        endif
+
+    endif
+    end
+endcase
 
     ;instructs the missing annuli
     iaim_2load=intersect(iaim,intersect(iaim,iaim_loaded,/xor_flag))
 
     c2load2=where(iaim_2load ge 0,c2load)
-
-    ;*debugging*
-    ;if(c2load le 0)then begin
-    ;if(ir eq 15)then begin
-    ; c2load = 1
-    ; iaim_2load=0
-    ;endif
 
     for k=0,c2load-1 do begin
     
@@ -596,9 +684,18 @@ endif
  
         if keyword_set(fwdmod) then $
         annuli_fwd_tmp=read_binary(tmpdir+'values_fwd'+nbr2txt(iaim_2load[k],3)+'.dat',data_type=4)
+
+        if keyword_set(np) then $
+          annuli_np_tmp=read_binary(tmpdir+'values_np'+nbr2txt(iaim_2load[k],3)+'.dat',data_type=4)
+
         annuli_tmp=reform(annuli_tmp,n_elements(ia_tmp),nfiles)
+
         if keyword_set(fwdmod) then $
         annuli_fwd_tmp=reform(annuli_fwd_tmp,n_elements(ia_tmp)*1L,nfiles*1L)
+
+        if keyword_set(np) then $
+          annuli_np_tmp=reform(annuli_np_tmp,n_elements(ia_tmp)*1L,nfiles*1L)
+
 
         if ir+k eq 0 then ia=ia_tmp else ia=[ia,ia_tmp]
         if ir+k eq 0 then annuli=annuli_tmp else annuli=[annuli,annuli_tmp]
@@ -606,28 +703,33 @@ endif
         if keyword_set(fwdmod) then begin
          if ir+k eq 0 then annuli_fwd=annuli_fwd_tmp else annuli_fwd=[annuli_fwd,annuli_fwd_tmp]
         endif
+        if keyword_set(np) then begin
+         if ir+k eq 0 then annuli_np=annuli_np_tmp else annuli_np=[annuli_np,annuli_np_tmp]
+        endif
+        
     endfor
 
     ia_tmp=0 & annuli_tmp=0
+    annuli_np_tmp=0
 
     ;remembers the list of annuli changes
     iaim_loaded=iaim
+      ;  rinnerrad=rmin-dr > 1
+      ;  opt_inner=ri+fac1*dr-fac1*dropt > rinnerrad
+      ;  opt_outer=ri+fac2*dr+(1-fac2)*dropt < rimmax
 
-    ;indices of pixels for optimization annulus
-    iaopt=where(distarr[ia] ge r1opt and distarr[ia] lt r2opt)
-    ;print,'hihihihi',r1opt,r2opt,ir,nrim-1
-    ;if (ir eq nrim-1) then print,'hihi',r1opt,r2opt,ir,nrim-1 
-    ;if (ir eq nrim-1) then stop
-    
-     if (pixmask gt 0) then iaopt2=where(distarr[ia] ge r1opt +dr and distarr[ia] lt r2opt)
+    iaopt=where(distarr[ia] ge opt_inner and distarr[ia] lt opt_outer)
+    iasub=where(distarr[ia] ge ri and distarr[ia] lt rf)
 
-    ;angle of annulus sections
-    dt=2.*!pi/nt
+   ;angle of annulus sections
+    dtp=2.*!pi/nt ;for optimization zone
+    dt=2*!pi/ntz   ;for subtraction zone
+
     ;print,'sqrt ',sqrt(area*geom),'r1opt is ',r1opt,' r2opt is',r2opt,' dropt is',r2opt-r1opt
 
     ;loop on angular sections
 
-    for it=0,nt-1 do begin
+    for it=0,ntz-1 do begin
         ;indices of pixels included in this section: i.e. the optmization region
 
     if keyword_set(usecoeff) then begin
@@ -640,40 +742,138 @@ endif
     endif
     endif
 
-        iopt=where(ang[ia[iaopt]] ge it*dt and ang[ia[iaopt]] lt (it+1)*dt) 
-        if (pixmask gt 0) then $
-        iopt2=where(ang[ia[iaopt2]] ge it*dt and ang[ia[iaopt2]] lt (it+1)*dt)
+;determines pixels for subtraction zone
+        ioptsub=where(ang[ia[iasub]] ge it*dt and ang[ia[iasub]] lt (it+1)*dt)
+        isub=iasub[ioptsub]
+
+;case decision for determining pixels of the optimization zone
+case zonetype of
+
+  0:begin
+
+
+ iopt=where(ang[ia[iaopt]] ge it*dtp and ang[ia[iaopt]] lt (it+1)*dtp,complement=noiopt)
+
+ if (pixmask gt 0) then begin
+iaopt2=where(distarr[ia] ge rf and distarr[ia] lt opt_outer)
+iopt2=where(ang[ia[iaopt2]] ge it*dtp and ang[ia[iaopt2]] lt (it+1)*dtp)
+iopt=iaopt2[iopt2]
+
+ endif else begin
+
+ iopt=iaopt[iopt]
+
+ endelse
+
+;duh=fltarr(dim,dim)
+;duh[ia[iopt]]=1
+;duh[ia[isub]]=3
+;print,ri,rf,opt_inner,opt_outer
+;writefits,'duh.fits',duh
+;stop
+    end
+
+  1:begin
+
+ iaopt=where(distarr[ia] ge opt_inner and distarr[ia] lt opt_outer)
+ ziopt=where(ang[ia[iaopt]] ge it*dtp and ang[ia[iaopt]] lt (it+1)*dtp,complement=noiopt)
+ ziopt=iaopt[ziopt]
+
+ if (pixmask gt 0) then begin
+ noiopt=iaopt[noiopt]
+ iopt=where(distarr[ia[noiopt]] ge opt_inner and distarr[ia[noiopt]] lt opt_outer)
+ iopt=noiopt[iopt]
+ endif else begin
+ iopt=iaopt
+
+ endelse
+
+    end
+
+  2:begin
+
+iopt=where( ((ang[ia[iaopt]] ge (it*dt-(dtp-dt)/2.) and ang[ia[iaopt]] lt ((it+1)*dt+(dtp-dt)/2.)) or $
+(ang[ia[iaopt]] -it*dt gt 2*!pi-(dtp-dt)/2.)) or (ang[ia[iaopt]]+2*!pi-(it+1)*dt lt (dtp-dt)/2.))
+
+iopt=iaopt[iopt]
+
+  if (pixmask gt 0) then begin
+
+  imask=where(distarr[ia[iopt]] ge ri and distarr[ia[iopt]] lt rf $
+and (ang[ia[iopt]] ge it*dt and ang[ia[iopt]] lt (it+1)*dt),complement=inomask)
+
+  iopt=iopt[inomask]
+  endif
+
+    end
+
+  3:begin
+
+iopt=where( ((ang[ia[iaopt]] ge (it*dt-(dtp-dt)/2.) and ang[ia[iaopt]] lt ((it+1)*dt+(dtp-dt)/2.)) or $
+(ang[ia[iaopt]] -it*dt gt 2*!pi-(dtp-dt)/2.)) or (ang[ia[iaopt]]+2*!pi-(it+1)*dt lt (dtp-dt)/2.))
+
+iopt=iaopt[iopt]
+
+  if (pixmask gt 0) then begin
+
+  imask=where(distarr[ia[iopt]] ge ri and distarr[ia[iopt]] lt rf $
+and (ang[ia[iopt]] ge it*dt and ang[ia[iopt]] lt (it+1)*dt),complement=inomask)
+
+  iopt=iopt[inomask]
+  endif
+
+
+    end
+endcase
+
 
         npix=n_elements(iopt)
 
         if npix lt 5 then continue
  
-        iopt=iaopt[iopt]
-         
         ;instructs the region of optimization in memory
-
+      
+        if ~keyword_set(np) then begin
         optreg=annuli[iopt,*]
+        endif else begin
+        optreg=annuli_np[iopt,*]
+        endelse
+        
         if keyword_set(fwdmod) then begin
           optreg_fwd=annuli_fwd[iopt,*]
           optreg+=annuli_fwd[iopt,*]
         endif
         ;indices of pixels to subtract
 
-        isub=where(distarr[ia[iopt]] ge ri and distarr[ia[iopt]] lt rf)
         if n_elements(isub) lt 2 then continue
-        isub=iopt[isub]
 
-        if (pixmask gt 0) then begin
-        ;if keyword_set(pixmask) then begin
-         iopt=iaopt2[iopt2]
-         optreg=annuli[iopt,*]
-         if keyword_set(fwdmod) then begin 
-           optreg_fwd=annuli_fwd[iopt,*]
-           optreg+=annuli_fwd[iopt,*]
-         endif
+if keyword_set(debug) then begin
+print,'it and ir',it,ir,ntz
+print,'optinner/outer',opt_inner,opt_outer,ri,rf
+        ;print,
+        testimage=fltarr(dim,dim)
+        testimage2=fltarr(dim,dim)
+        testimage3=fltarr(dim,dim)
+        testimage[ia[iopt]]=1
+        testimage[ia[isub]]=2
+        testimage2[ia[iopt]]=1
+        testimage3[ia[isub]]=2
+
+        writefits,'testimage.fits',testimage
+        writefits,'testimage2.fits',testimage2
+        writefits,'testimage3.fits',testimage3
+        if it eq 5 and ir eq 9 then begin
+         help,iopt
+         print,it*dt*180/!pi,(it+1)*dt*180/!pi
+         print,dtp,dt,it
+         print,ntz,nt
+         print,2.*!pi-(dtp-(it+1)*dt)/2.,(dtp-(it+1)*dt)/2.
+         print,2.*!pi-(dtp-it*dt)/2.
+        stop
         endif
+endif
 
-;        ****masking deviants****
+; ****Removing deviants
 
         ;always keep isub defined here (before removing deviant pixels)
         ;otherwise bright sources (which are identified as deviant pixels)
@@ -695,11 +895,11 @@ endif
         z/=(median(abs(z),dim=2,/even)#replicate(1,nfiles))
         z=(abs(z) lt 7 and finite(z) eq 1)
         ; z=(finite(z) eq 1)
-
+        
         zq=median(z,dimension=2,/even)
 
         ;for a given pixel [i,*] look to see whether an image pixel that is deviant
-;a patch for now: SVD screws up for NaNs/zeroes in outer image slice regions when using post-SDI
+;a patch for now: SVD screws up for NaNs/zeroes in outer image slice regions when using post-SDI 
 if ~keyword_set(postsdi) then begin
         igoodf=where(min(z,dim=2),cgood)
 endif else begin
@@ -709,9 +909,10 @@ endif else begin
         if keyword_set(fwdmod) then optreg_fwd=optreg_fwd[igoodf,*]
 endelse
 
-        ;if cgood lt 5 then continue
+        ;if cgood lt 2 then continue
         ;optreg=optreg[igoodf,*]
         ;iopt=iopt[igoodf]
+
         ;if keyword_set(fwdmod) then optreg_fwd=optreg_fwd[igoodf,*]
 
         ;there clues to avoid a build images later
@@ -719,6 +920,7 @@ endelse
         openw,lunit,tmpdir+'indices_images.dat',/get_lun,append=(ir+it gt 0)
         writeu,lunit,ia[isub]
         free_lun,lunit
+         ;stop
         ;build large matrix of a linear system to solve
        
        if ~keyword_set(fwdmod) then begin   
@@ -755,7 +957,6 @@ endelse
             ;if c1 eq 0 then begin
             if c1 eq 0 or c2 lt 2 then begin
                 ;*debug*
-                ;diff=fltarr(n_elements(isub))*0
                 diff=fltarr(n_elements(isub))+!values.f_nan
                 difffwd=diff
             endif else begin
@@ -776,7 +977,7 @@ endif
 
 
 endif
-                ;if ~keyword_set(fwdmod) then begin
+                ;if ~keyword_set(fwdmod) then begin  ;OLD version
                 ;matrix of linear system to solve
                 a=(aa[indim,*])[*,indim]
                 ;vector b of a linear system to solve
@@ -792,15 +993,20 @@ endif
                 c=invert(a,/double)#b
                 endelse
 
-                if ~keyword_set(fwdmod) then begin
+                if ~keyword_set(fwdmod) then begin   ;NEW version
                 ;construct the reference
                 skipmatrixinversion:
 
                 ref=fltarr(n_elements(isub))
+                
+                if ~keyword_set(np) then begin
                 for k=0,c1-1 do begin 
                  ref[igood]+=c[k]*annuli[isub[igood],indim[k]]
                  if keyword_set(savecoeff) then printf,1,long(il),long(ir),long(it),long(nf),c[k]
                 endfor
+                endif else begin
+                 for k=0,c1-1 do ref[igood]+=c[k]*annuli_np[isub[igood],indim[k]]
+                endelse
 
                 ;make the difference
         ;        reftot=total(ref) 
@@ -836,7 +1042,6 @@ endif
 
 ;the first part of the perturbed column vector b'
                pert1=(annuli[iopt,*])[*,indim]
-               ;pert1+=(annuli_fwd[iopt,*])[*,indim]
 ;the second part of the perturbed column vector b'
                pert2=annuli_fwd[iopt,nf]-refpert
 
@@ -870,7 +1075,6 @@ endif
                endfor
                diff=annuli_fwd[isub,nf]-ref
                if (zero gt 0) then diff-=median(diff,/even)
-               ;diff=annuli_fwd[isub,nf]
              endelse
             endelse
         
@@ -884,8 +1088,8 @@ endif
 endfor
 
 ;deletes files. .dat annuli
-;file_delete,file_search(tmpdir,'indices_a*.dat')
-;file_delete,file_search(tmpdir,'values_a*.dat')
+file_delete,file_search(tmpdir,'indices_a*.dat')
+file_delete,file_search(tmpdir,'values_a*.dat')
 
 ;reading signs of pixels removed
 
@@ -908,17 +1112,20 @@ for nf=0,nfiles-1 do begin
     ;delete temporary files
     file_delete,tmpdir+filestmp[nf]
 
-    if norm eq 1 then begin
+if nweight gt 0 then    varmapcube[*,*,il,nf]=im
 
+    ;not in use
+    ;if norm eq 1 then begin
         ;multiplied by the radial profile of noise
-        pr=readfits(tmpdir+filesprof[nf],/silent)
-        im*=pr
-        file_delete,tmpdir+filesprof[nf]
-    endif
+    ;    pr=readfits(tmpdir+filesprof[nf],/silent)
+    ;    im*=pr
+    ;    file_delete,tmpdir+filesprof[nf]
+    ;endif
 
     ;get header
     h1=headfits(reducdir1+files[nf],/exten,/silent)
     h0=headfits(reducdir1+files[nf],ext=0,/silent)
+    ;h=headfits(reducdir+files[nf])
 
 ; ;***removed a lot of legacy code here useful for Gemini/NIRI but otherwise not.
 ;;**** see older code versions
@@ -930,14 +1137,14 @@ for nf=0,nfiles-1 do begin
 
 ;******astrometry*****
 
-;****** default is to rotate north-up given fits header information and the north PA offset
-
-;throw the /norot switch if you do not want to derotate the image to a common value (e.g., if you are doing SDI on residuals after this step)
+;******default is to rotate north-up using the tot-rot fits header keyword in the primary header
+;throw the /norot switch if you do not want to derotate the image to a common value (e.g., if you are doing SDI after this step)
 
 if ~keyword_set(norot) then begin
 theta=-1*allpa[nf]
 
 charis_northup,im,h0,h1,angoffset=angoffset
+
 endif else begin
 
 endelse
@@ -968,25 +1175,35 @@ endelse
     sxaddpar,h1,'pixmaskv',pixmask
     sxaddpar,h1,'zero',zero
     sxaddpar,h1,'meanadd',meanadd
+    sxaddpar,h1,'adiztype',zonetype
+    sxaddpar,h1,'nweight',nweight
     suffix1='-loci'+strcompress(string(il),/REMOVE_ALL)
 
     writefits,tmpdir+outfile+'_'+nbr2txt(nlist[nf],4)+suffix1+'.fits',0,h0
     writefits,tmpdir+outfile+'_'+nbr2txt(nlist[nf],4)+suffix1+'.fits',im,h1,/append
 endfor
 
-
 skipthischannel:
 endfor ;wav
 
 breakoutwavelengthloop:
 
-;endtime=systime(/seconds)
+if nweight gt 0 then begin
+;variance map
+varmap=variance(varmapcube,dimension=4,/double,/nan)
+varcube=rebin(varmap,dim,dim,n_elements(lambda),nfiles)
+writefits,'varmap.fits',varmap
+writefits,'varcube.fits',varcube
+endif
+
+
 ;Okay, now combine the images together, construct datacubes, and then construct a combined datacube.
 imt=dblarr(dim,dim,n_elements(lambda))
 ;imtot=dlbarr(dim,dim,n_elements(lambda),nfiles)
 suffix0='-loci'
 
 for nf=0,nfiles-1 do begin
+
  for il=0,n_elements(lambda)-1 do begin
 
  if ~keyword_set(channel) then begin
@@ -997,17 +1214,34 @@ for nf=0,nfiles-1 do begin
  imt[*,*,il]=readfits(tmpdir+outfile+'_'+nbr2txt(nlist[nf],4)+suffix0+strcompress(string(channel),/REMOVE_ALL)+'.fits',/SILENT,/exten,h1)
  endelse
 
+;variance map
+if nweight gt 0 then begin
+h0var=headfits(reducdir1+files[nf],/silent,ext=0)
+h1var=headfits(reducdir1+files[nf],ext=1)
+duhrot=filter_image(varcube[*,*,il,nf],median=3)
+charis_northup,duhrot,h0var,h1var
+varcube[*,*,il,nf]=duhrot
+endif
+
  endfor
+
  writefits,reducdir+filesout[nf],0,h0
  writefits,reducdir+filesout[nf],imt,h1,/append
 endfor
 
+if nweight gt 0 then writefits,'varcuberot.fits',varcube
+
+if nweight gt 0 then begin
+im=charis_combinefits(filesout,dir=reducdir,/cube,nwght=nweight,varcube=varcube)
+endif else begin
 
 if ~keyword_set(mean) then begin
 im=charis_combinefits(filesout,dir=reducdir,/cube)
 endif else begin
 
 im=charis_combinefits(filesout,/mean,dir=reducdir,/cube)
+endelse
+
 endelse
 
 h0=headfits(reducdir+filesout[0],ext=0)
@@ -1049,8 +1283,5 @@ if (keyword_set(fwdmod) or keyword_set(savecoeff) or keyword_set(usecoeff)) then
 
 print,'ANGOFFSET WAS',angoffset
 
-endtime=systime(/seconds)
-print,"elapsed time is ",endtime-starttime," seconds"
 endofprogram:
-
 end
