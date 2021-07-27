@@ -81,6 +81,8 @@ print,"*outfile - the name of the output file"
 goto,endofprogram
 endif
 
+starttime=systime(/seconds)
+
 if ~keyword_set(angoffset) then angoffset=charis_get_constant(name='angoffset') ;nominally 2.2 deg
 
 ;Telescope Diameter for Subaru
@@ -689,8 +691,8 @@ endif
 ;        z<=(abs(optreg/noise_im[floor((distarr(ia[iopt])-rim[0])/drim)#replicate(1,nfiles)]) lt 15.)
 
         z=optreg
-        z/=(replicate(1,n_elements(iopt))#median(abs(z),dim=1))
-        z/=(median(abs(z),dim=2)#replicate(1,nfiles))
+        z/=(replicate(1,n_elements(iopt))#median(abs(z),dim=1,/even))
+        z/=(median(abs(z),dim=2,/even)#replicate(1,nfiles))
         z=(abs(z) lt 7 and finite(z) eq 1)
         ; z=(finite(z) eq 1)
 
@@ -972,11 +974,13 @@ endelse
     writefits,tmpdir+outfile+'_'+nbr2txt(nlist[nf],4)+suffix1+'.fits',im,h1,/append
 endfor
 
+
 skipthischannel:
 endfor ;wav
 
 breakoutwavelengthloop:
 
+;endtime=systime(/seconds)
 ;Okay, now combine the images together, construct datacubes, and then construct a combined datacube.
 imt=dblarr(dim,dim,n_elements(lambda))
 ;imtot=dlbarr(dim,dim,n_elements(lambda),nfiles)
@@ -1045,5 +1049,8 @@ if (keyword_set(fwdmod) or keyword_set(savecoeff) or keyword_set(usecoeff)) then
 
 print,'ANGOFFSET WAS',angoffset
 
+endtime=systime(/seconds)
+print,"elapsed time is ",endtime-starttime," seconds"
 endofprogram:
+
 end

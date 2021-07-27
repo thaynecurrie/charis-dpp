@@ -701,8 +701,8 @@ for ir=0,nrsub-1 do begin
 ;        z<=(abs(optreg/noise_im[floor((distarr(ia[iopt])-rim[0])/drim)#replicate(1,nfiles)]) lt 15.)
 
         z=optreg
-        z/=(replicate(1,n_elements(iopt))#median(abs(z),dim=1))
-        z/=(median(abs(z),dim=2)#replicate(1,nlambda))
+        z/=(replicate(1,n_elements(iopt))#median(abs(z),dim=1,/even))
+        z/=(median(abs(z),dim=2,/even)#replicate(1,nlambda))
         ;z/=(median(abs(z),dim=2)#replicate(1,nfiles))
         ;z=(abs(z) lt 7 and finite(z) eq 1)
         ;z=(finite(z) eq 1)
