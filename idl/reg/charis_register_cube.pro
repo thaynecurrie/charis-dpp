@@ -54,6 +54,9 @@ verbose=verbose,help=help
 ;method = [sats, psf, calsat]
 ;****notes: halo [matching just on the basis of the PSF halo] is TBD but lower priority
 
+;system time
+starttime=systime(/seconds)
+
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
 print,"charis_register_cube,pfname,method=method,guessoffsets=guessoffsets,astrogrid=astrogrid,rsub=rsub,medbox=medbox"
 print,",refcube=refcube,ladder=ladder,xcorr=xcorr,splitpsf=splitpsf,keepprev=keepprev,nosmooth=nosmooth,revise=revise,fwhmlim=fwhmlim"
@@ -94,9 +97,23 @@ method = 0
 goto,skipmethodlist
 endif
 
-if method eq 'sats' then method = 0
-if method eq 'psf' then method = 1
-if method eq 'calsats' then method =2
+;if method eq 'sats' then method = 0
+;if method eq 'psf' then method = 1
+;if method eq 'calsats' then method =2
+
+if method eq 'sats' then begin 
+method = 0
+goto,skipmethodlist
+endif
+if method eq 'psf' then begin
+method = 1
+goto,skipmethodlist
+endif
+if method eq 'calsats' then begin
+method =2
+goto,skipmethodlist
+endif
+
 skipmethodlist:
 
 ;if ~keyword_set(refslice) then refslice=10  ;hardwire this for now
@@ -797,6 +814,11 @@ case filtname of
        end
 endcase
 
+if keyword_set(astrogrid) then begin
+  sat_xguess = (sat_xguess-xc0)*(astrogrid/15.9)+xc0
+  sat_yguess = (sat_yguess-yc0)*(astrogrid/15.9)+yc0
+endif
+
 if keyword_set(guessoffsets) then begin
 sat_xguess+=guessoffsets[0]
 sat_yguess+=guessoffsets[1]
@@ -891,7 +913,7 @@ deltayref=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffs
 
 print,'Offsets of Reference Image ',deltaxref,deltayref
 
-
+stop
 if keyword_set(guessoffsets) then begin
 plot,slices,PSFcensref[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
 endif else begin
@@ -1118,6 +1140,8 @@ endif
 close,1
 close,2
 
+endtime=systime(/seconds)
+print,"elapsed time is ",endtime-starttime," seconds"
 skiptotheend:
 
 end
